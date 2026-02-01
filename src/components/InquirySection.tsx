@@ -5,7 +5,7 @@ import type { SiteSettings } from "@/lib/getSettings";
 
 interface InquirySectionProps {
   selectedDate?: string;
-  selectedTime?: string;
+  selectedTime?: string; // optional; if not provided, we'll send "Flexible/Any time"
   settings: SiteSettings | null;
 }
 
@@ -18,18 +18,26 @@ export default function InquirySection({
   const instagramUrl = settings?.instagram_url ?? "https://instagram.com/yourhandle";
   const tiktokUrl = settings?.tiktok_url ?? "https://tiktok.com/@yourhandle";
 
+  const formatNiceDate = (iso: string) =>
+    new Date(iso).toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+
   const buildWhatsAppMessage = () => {
     let message = "Hi Raygraphy! 👋\n\n";
     message += "I'm interested in your photography services.\n\n";
 
-    if (selectedDate && selectedTime) {
-      message += `📅 Preferred Date: ${new Date(selectedDate).toLocaleDateString("en-US", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })}\n`;
-      message += `⏰ Preferred Time: ${selectedTime}\n\n`;
+    // DATE-only (time optional)
+    if (selectedDate) {
+      message += `📅 Preferred Date: ${formatNiceDate(selectedDate)}\n`;
+
+      // If time is removed / not selected, keep it flexible
+      const timeText =
+        selectedTime && selectedTime !== "Any Time" ? selectedTime : "Flexible / Any time";
+      message += `⏰ Preferred Time: ${timeText}\n\n`;
     }
 
     message += "Please let me know about availability and next steps.\n\nThank you!";
@@ -41,7 +49,9 @@ export default function InquirySection({
   // For display only (nice formatting). If admin stores +60... we keep it; otherwise show +<number>
   const displayWhatsapp =
     settings?.whatsapp_number
-      ? (settings.whatsapp_number.startsWith("+") ? settings.whatsapp_number : `+${settings.whatsapp_number}`)
+      ? settings.whatsapp_number.startsWith("+")
+        ? settings.whatsapp_number
+        : `+${settings.whatsapp_number}`
       : "+60123456789";
 
   return (
@@ -73,10 +83,12 @@ export default function InquirySection({
             >
               Message us
             </a>
-            {selectedDate && selectedTime && (
+
+            {/* Changed: show this when a date is selected (time is optional) */}
+            {selectedDate && (
               <div className="mt-4 p-3 bg-white rounded-lg border border-green-200 text-left">
                 <p className="text-xs text-green-700 font-semibold">
-                  ✓ Your slot info is included in the message
+                  ✓ Your preferred date is included in the message
                 </p>
               </div>
             )}

@@ -19,9 +19,9 @@ type AvailabilityRow = {
 };
 
 interface CalendarSectionProps {
-  onDateSelect: (date: string, time: string) => void;
+  onDateSelect: (date: string, time: string) => void; // keep as-is, we pass "Any Time"
   selectedDate?: string;
-  selectedTime?: string;
+  selectedTime?: string; // not used anymore, but keep to avoid breaking parent
 }
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -33,15 +33,17 @@ const formatDate = (year: number, month: number, day: number): string => {
 const monthLabel = (date: Date) =>
   date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
-const getDaysInMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-const getFirstDayOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+const getDaysInMonth = (date: Date) =>
+  new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+
+const getFirstDayOfMonth = (date: Date) =>
+  new Date(date.getFullYear(), date.getMonth(), 1).getDay();
 
 const toHHMM = (t: string) => t.slice(0, 5);
 
 export default function CalendarSection({
   onDateSelect,
   selectedDate,
-  selectedTime,
 }: CalendarSectionProps) {
   const [currentDate, setCurrentDate] = useState(new Date()); // current month
   const [selectedDay, setSelectedDay] = useState<string | null>(selectedDate || null);
@@ -66,6 +68,9 @@ export default function CalendarSection({
   const handleSelectDay = (day: number) => {
     const dateStr = formatDate(currentDate.getFullYear(), currentDate.getMonth(), day);
     setSelectedDay(dateStr);
+
+    // DATE ONLY: always proceed with "Any Time"
+    onDateSelect(dateStr, "Any Time");
   };
 
   // Fetch availability for current month from Supabase
@@ -79,7 +84,11 @@ export default function CalendarSection({
     setErr(null);
 
     const from = formatDate(currentDate.getFullYear(), currentDate.getMonth(), 1);
-    const to = formatDate(currentDate.getFullYear(), currentDate.getMonth(), getDaysInMonth(currentDate));
+    const to = formatDate(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      getDaysInMonth(currentDate)
+    );
 
     const { data, error } = await supabase
       .from("availability_slots")
@@ -112,18 +121,16 @@ export default function CalendarSection({
     return map;
   }, [rows]);
 
-  // UI: green dates that have at least 1 available slot
-  const hasAvailableSlot = (dateStr: string) => {
+  // Full-day booked => date becomes RED, but still clickable
+  const isFullDayBooked = (dateStr: string) => {
     const list = byDate.get(dateStr) ?? [];
-    return list.some((x) => x.status === "available");
+    return list.some((x) => x.is_full_day && x.status === "booked");
   };
 
-  // UI: get availability object for selected date (like your mock)
+  // For selected date: show ONLY slots that admin created (view-only)
   const getAvailabilityForDate = (dateStr: string) => {
     const list = byDate.get(dateStr) ?? [];
-    if (list.length === 0) return null;
 
-    // Build slots array similar to your mock structure
     const slots = list
       .slice()
       .sort((a, b) => {
@@ -137,13 +144,13 @@ export default function CalendarSection({
         status: x.status,
       }));
 
-    // optional event type (use first non-null service_type)
     const eventType = list.find((x) => x.service_type)?.service_type ?? null;
 
     return { slots, eventType };
   };
 
   const availability = selectedDay ? getAvailabilityForDate(selectedDay) : null;
+  const selectedDayIsFullBooked = selectedDay ? isFullDayBooked(selectedDay) : false;
 
   const days: Array<number | null> = [];
   const daysInMonth = getDaysInMonth(currentDate);
@@ -176,7 +183,6 @@ export default function CalendarSection({
                 aria-label="Previous month"
               >
                 <ChevronLeft className="h-5 w-5 text-slate-900" strokeWidth={2.5} />
-
               </button>
 
               <div className="flex items-center gap-3">
@@ -213,7 +219,7 @@ export default function CalendarSection({
                 if (day === null) return <div key={`empty-${idx}`} />;
 
                 const dateStr = formatDate(currentDate.getFullYear(), currentDate.getMonth(), day);
-                const available = hasAvailableSlot(dateStr);
+                const fullBooked = isFullDayBooked(dateStr);
                 const isSelected = selectedDay === dateStr;
 
                 return (
@@ -225,12 +231,11 @@ export default function CalendarSection({
                       ${
                         isSelected
                           ? "bg-slate-900 text-white ring-2 ring-slate-900"
-                          : available
-                          ? "bg-green-100 text-green-900 hover:bg-green-200"
-                          : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                          : fullBooked
+                          ? "bg-red-100 text-red-800 hover:bg-red-200"
+                          : "bg-green-100 text-green-900 hover:bg-green-200"
                       }
                     `}
-                    disabled={!available}
                   >
                     {day}
                   </button>
@@ -239,43 +244,49 @@ export default function CalendarSection({
             </div>
           </div>
 
-          {/* Slots Display */}
+          {/* Slots Display (view-only) */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h3 className="text-lg font-semibold text-slate-900 mb-4">
-              {selectedDay ? "Available Slots" : "Select a Date"}
+              {selectedDay ? "Availability Details" : "Select a Date"}
             </h3>
 
             {selectedDay && availability ? (
-              <div className="space-y-2">
-                {availability.slots.map((slot: any, idx: number) => (
-                  <button
-                    key={idx}
-                    onClick={() => onDateSelect(selectedDay, slot.time)}
-                    disabled={slot.status === "booked"}
-                    className={`
-                      w-full py-3 px-4 rounded-lg font-medium transition text-sm
-                      ${
-                        selectedTime === slot.time && slot.status === "available"
-                          ? "bg-slate-900 text-white"
-                          : slot.status === "available"
-                          ? "bg-green-50 text-green-900 hover:bg-green-100 border border-green-200"
-                          : "bg-red-50 text-red-600 cursor-not-allowed border border-red-200"
-                      }
-                    `}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span>{slot.time}</span>
-                      <span className="text-xs font-semibold">
-                        {slot.status === "available" ? "✓ Available" : "✗ Booked"}
-                      </span>
-                    </div>
-                  </button>
-                ))}
+              availability.slots.length > 0 ? (
+                <div className="space-y-2">
+                  {availability.slots.map((slot: any, idx: number) => {
+                    // If full day booked, everything is effectively booked (view-only)
+                    const effectiveBooked = selectedDayIsFullBooked || slot.status === "booked";
 
-              </div>
+                    return (
+                      <div
+                        key={idx}
+                        className={`
+                          w-full py-3 px-4 rounded-lg font-medium text-sm border
+                          ${
+                            !effectiveBooked
+                              ? "bg-green-50 text-green-900 border-green-200"
+                              : "bg-red-50 text-red-600 border-red-200"
+                          }
+                        `}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span>{slot.time}</span>
+                          <span className="text-xs font-semibold">
+                            {!effectiveBooked ? "✓ Available" : "✗ Booked"}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-slate-500 text-sm">
+                  No slots for this date yet. (You can still proceed — date selection already sends WhatsApp.)
+                </p>
+              )
             ) : (
               <p className="text-slate-500 text-sm">
-                Green dates have available slots
+                Dates are available by default. Red means fully booked.
               </p>
             )}
           </div>

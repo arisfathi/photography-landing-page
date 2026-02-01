@@ -139,6 +139,12 @@ export default function AdminAvailabilityPage() {
     const { error } = await supabase.from("availability_slots").insert(payload);
 
     if (error) {
+      // 23505 = unique violation in Postgres
+      // Supabase often returns it as error.code
+      if ((error as any).code === "23505") {
+        setErr("This slot already exists for that date.");
+        return;
+      }
       setErr(error.message);
       return;
     }
