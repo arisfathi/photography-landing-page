@@ -88,45 +88,52 @@ BEGIN
   END IF;
 END $$;
 
--- 6. ADD HERO COLUMNS TO SITE_SETTINGS
+-- 6. ADD HERO + SOCIAL COLUMNS TO SITE_SETTINGS
 ALTER TABLE site_settings
 ADD COLUMN IF NOT EXISTS hero_banner_url TEXT,
 ADD COLUMN IF NOT EXISTS hero_title TEXT,
 ADD COLUMN IF NOT EXISTS hero_subtitle TEXT,
-ADD COLUMN IF NOT EXISTS hero_tagline TEXT;
+ADD COLUMN IF NOT EXISTS hero_tagline TEXT,
+ADD COLUMN IF NOT EXISTS facebook_url TEXT;
 
 -- 7. ENABLE RLS ON PHOTOGRAPHY_TYPES
 ALTER TABLE photography_types ENABLE ROW LEVEL SECURITY;
 
 -- 8. RLS POLICY: ANYONE CAN READ TYPES
-CREATE POLICY IF NOT EXISTS photography_types_read ON photography_types
+DROP POLICY IF EXISTS photography_types_read ON photography_types;
+CREATE POLICY photography_types_read ON photography_types
   FOR SELECT
   USING (true);
 
 -- 9. RLS POLICY: ONLY ADMINS CAN INSERT
-CREATE POLICY IF NOT EXISTS photography_types_insert ON photography_types
+DROP POLICY IF EXISTS photography_types_insert ON photography_types;
+CREATE POLICY photography_types_insert ON photography_types
   FOR INSERT
   WITH CHECK (public.is_admin(auth.uid()));
 
 -- 10. RLS POLICY: ONLY ADMINS CAN UPDATE
-CREATE POLICY IF NOT EXISTS photography_types_update ON photography_types
+DROP POLICY IF EXISTS photography_types_update ON photography_types;
+CREATE POLICY photography_types_update ON photography_types
   FOR UPDATE
   USING (public.is_admin(auth.uid()))
   WITH CHECK (public.is_admin(auth.uid()));
 
 -- 11. RLS POLICY: ONLY ADMINS CAN DELETE
-CREATE POLICY IF NOT EXISTS photography_types_delete ON photography_types
+DROP POLICY IF EXISTS photography_types_delete ON photography_types;
+CREATE POLICY photography_types_delete ON photography_types
   FOR DELETE
   USING (public.is_admin(auth.uid()));
 
 -- 12. RLS POLICY: SITE_SETTINGS UPDATE (ADMIN ONLY)
-CREATE POLICY IF NOT EXISTS site_settings_update ON site_settings
+DROP POLICY IF EXISTS site_settings_update ON site_settings;
+CREATE POLICY site_settings_update ON site_settings
   FOR UPDATE
   USING (public.is_admin(auth.uid()))
   WITH CHECK (public.is_admin(auth.uid()));
 
 -- 13. RLS POLICY: SITE_SETTINGS READ (PUBLIC)
-CREATE POLICY IF NOT EXISTS site_settings_read ON site_settings
+DROP POLICY IF EXISTS site_settings_read ON site_settings;
+CREATE POLICY site_settings_read ON site_settings
   FOR SELECT
   USING (true);
 

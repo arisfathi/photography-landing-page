@@ -61,7 +61,7 @@ export default function Home() {
 
       <footer className="bg-slate-900 text-slate-300 py-8 px-4">
         <div className="max-w-6xl mx-auto text-center text-sm">
-          <p>&copy; 2026 raygraphy.co All rights reserved.</p>
+          <p>&copy; 2026 raygraphy. All rights reserved.</p>
           <p className="mt-2">Professional Photography Services</p>
         </div>
       </footer>

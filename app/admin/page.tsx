@@ -3,7 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSession, signOut } from "@/lib/auth";
-import { Settings, Calendar, Package, Image, LogOut, Layers } from "lucide-react";
+import CalendarIcon from "@remixicons/react/line/CalendarIcon";
+import Box3Icon from "@remixicons/react/line/Box3Icon";
+import ImageIcon from "@remixicons/react/line/ImageIcon";
+import LogoutBoxRIcon from "@remixicons/react/line/LogoutBoxRIcon";
+import SettingsIcon from "@remixicons/react/line/SettingsIcon";
+import StackIcon from "@remixicons/react/line/StackIcon";
 
 interface User {
   email: string;
@@ -70,31 +75,31 @@ export default function AdminPage() {
     {
       name: "Settings",
       href: "/admin/settings",
-      icon: Settings,
+      icon: SettingsIcon,
       description: "Manage site settings",
     },
     {
       name: "Photography Types",
       href: "/admin/types",
-      icon: Layers,
+      icon: StackIcon,
       description: "Manage photography types",
     },
     {
       name: "Availability",
       href: "/admin/availability",
-      icon: Calendar,
+      icon: CalendarIcon,
       description: "Manage availability calendar",
     },
     {
       name: "Packages",
       href: "/admin/packages",
-      icon: Package,
+      icon: Box3Icon,
       description: "Manage service packages",
     },
     {
       name: "Portfolio",
       href: "/admin/portfolio",
-      icon: Image,
+      icon: ImageIcon,
       description: "Manage portfolio items",
     },
   ];
@@ -112,7 +117,7 @@ export default function AdminPage() {
                 onClick={handleSignOut}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-red-600 text-white text-sm font-medium hover:bg-red-700"
               >
-                <LogOut size={16} />
+                <LogoutBoxRIcon className="h-4 w-4 fill-current" />
                 Sign Out
               </button>
             </div>
@@ -137,7 +142,7 @@ export default function AdminPage() {
                   className="block p-6 bg-white rounded-lg shadow hover:shadow-lg transition-shadow"
                 >
                   <div className="flex items-center justify-center w-12 h-12 bg-indigo-100 rounded-lg mb-4">
-                    <IconComponent className="text-indigo-600" size={24} />
+                    <IconComponent className="h-6 w-6 text-indigo-600 fill-current" />
                   </div>
                   <h3 className="text-lg font-medium text-gray-900">
                     {item.name}

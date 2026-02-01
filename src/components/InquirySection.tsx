@@ -1,6 +1,9 @@
 "use client";
 
-import { Instagram, MessageCircle, Music } from "lucide-react";
+import FacebookCircleIcon from "@remixicons/react/line/FacebookCircleIcon";
+import InstagramIcon from "@remixicons/react/line/InstagramIcon";
+import TiktokIcon from "@remixicons/react/line/TiktokIcon";
+import WhatsappIcon from "@remixicons/react/line/WhatsappIcon";
 import type { SiteSettings } from "@/lib/getSettings";
 
 interface InquirySectionProps {
@@ -16,6 +19,7 @@ export default function InquirySection({
 }: InquirySectionProps) {
   const whatsappNumber = settings?.whatsapp_number ?? "60123456789"; // wa.me needs no '+'
   const instagramUrl = settings?.instagram_url ?? "https://instagram.com/yourhandle";
+  const facebookUrl = settings?.facebook_url ?? "https://facebook.com/yourpage";
   const tiktokUrl = settings?.tiktok_url ?? "https://tiktok.com/@yourhandle";
 
   const formatNiceDate = (iso: string) =>
@@ -65,11 +69,11 @@ export default function InquirySection({
           us on social media for updates and inspiration.
         </p>
 
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-4 gap-6">
           {/* WhatsApp CTA */}
-          <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-8 text-center border border-green-200">
+          <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-8 text-center border border-green-200 flex flex-col">
             <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <MessageCircle size={32} className="text-white" />
+              <WhatsappIcon className="h-8 w-8 text-white fill-current" />
             </div>
             <h3 className="text-xl font-bold text-slate-900 mb-2">WhatsApp</h3>
             <p className="text-slate-600 text-sm mb-4">
@@ -79,7 +83,7 @@ export default function InquirySection({
               href={whatsappUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition text-sm"
+              className="mt-auto inline-block bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition text-sm"
             >
               Message us
             </a>
@@ -95,9 +99,9 @@ export default function InquirySection({
           </div>
 
           {/* Instagram */}
-          <div className="bg-gradient-to-br from-pink-50 to-purple-100 rounded-lg p-8 text-center border border-pink-200">
+          <div className="bg-gradient-to-br from-pink-50 to-purple-100 rounded-lg p-8 text-center border border-pink-200 flex flex-col">
             <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Instagram size={32} className="text-white" />
+              <InstagramIcon className="h-8 w-8 text-white fill-current" />
             </div>
             <h3 className="text-xl font-bold text-slate-900 mb-2">Instagram</h3>
             <p className="text-slate-600 text-sm mb-4">
@@ -107,16 +111,16 @@ export default function InquirySection({
               href={instagramUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition text-sm"
+              className="mt-auto inline-block bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition text-sm"
             >
               Follow us
             </a>
           </div>
 
           {/* TikTok */}
-          <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg p-8 text-center border border-slate-300">
+          <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg p-8 text-center border border-slate-300 flex flex-col">
             <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Music size={32} className="text-white" />
+              <TiktokIcon className="h-8 w-8 text-white fill-current" />
             </div>
             <h3 className="text-xl font-bold text-slate-900 mb-2">TikTok</h3>
             <p className="text-slate-600 text-sm mb-4">Watch our creative video content & reels</p>
@@ -124,9 +128,28 @@ export default function InquirySection({
               href={tiktokUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block bg-slate-800 text-white px-6 py-3 rounded-lg font-semibold hover:bg-slate-900 transition text-sm"
+              className="mt-auto inline-block bg-slate-800 text-white px-6 py-3 rounded-lg font-semibold hover:bg-slate-900 transition text-sm"
             >
               Check videos
+            </a>
+          </div>
+
+          {/* Facebook */}
+          <div className="bg-gradient-to-br from-blue-50 to-slate-100 rounded-lg p-8 text-center border border-blue-200 flex flex-col">
+            <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FacebookCircleIcon className="h-8 w-8 text-white fill-current" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">Facebook</h3>
+            <p className="text-slate-600 text-sm mb-4">
+              Updates, announcements, and client highlights
+            </p>
+            <a
+              href={facebookUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-auto inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition text-sm"
+            >
+              Visit page
             </a>
           </div>
         </div>

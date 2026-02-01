@@ -13,6 +13,7 @@ type SettingsForm = {
   contact_phone: string;
   whatsapp_number: string;
   instagram_url: string;
+  facebook_url: string;
   tiktok_url: string;
   hero_banner_url: string;
   hero_title: string;
@@ -27,6 +28,7 @@ const emptyForm: SettingsForm = {
   contact_phone: "",
   whatsapp_number: "",
   instagram_url: "",
+  facebook_url: "",
   tiktok_url: "",
   hero_banner_url: "",
   hero_title: "",
@@ -92,6 +94,7 @@ export default function AdminSettingsPage() {
       contact_phone: data.contact_phone ?? "",
       whatsapp_number: data.whatsapp_number ?? "",
       instagram_url: data.instagram_url ?? "",
+      facebook_url: data.facebook_url ?? "",
       tiktok_url: data.tiktok_url ?? "",
       hero_banner_url: data.hero_banner_url ?? "",
       hero_title: data.hero_title ?? "",
@@ -150,6 +153,7 @@ export default function AdminSettingsPage() {
       contact_phone: form.contact_phone.trim() || null,
       whatsapp_number: form.whatsapp_number.trim() || null,
       instagram_url: form.instagram_url.trim() || null,
+      facebook_url: form.facebook_url.trim() || null,
       tiktok_url: form.tiktok_url.trim() || null,
       hero_banner_url: form.hero_banner_url.trim() || null,
       hero_title: form.hero_title.trim() || null,
@@ -351,6 +355,13 @@ export default function AdminSettingsPage() {
                 value={form.instagram_url}
                 onChange={(v) => updateField("instagram_url", v)}
                 placeholder="https://instagram.com/yourhandle"
+              />
+
+              <Field
+                label="Facebook URL"
+                value={form.facebook_url}
+                onChange={(v) => updateField("facebook_url", v)}
+                placeholder="https://facebook.com/yourpage"
               />
 
               <Field

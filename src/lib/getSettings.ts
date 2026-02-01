@@ -8,6 +8,7 @@ export type SiteSettings = {
   contact_phone: string | null;
   whatsapp_number: string | null; // wa.me number without +
   instagram_url: string | null;
+  facebook_url: string | null;
   tiktok_url: string | null;
   hero_banner_url: string | null;
   hero_title: string | null;

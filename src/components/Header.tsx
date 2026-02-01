@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Instagram, Music, Phone } from "lucide-react";
+import FacebookCircleIcon from "@remixicons/react/line/FacebookCircleIcon";
+import InstagramIcon from "@remixicons/react/line/InstagramIcon";
+import PhoneIcon from "@remixicons/react/line/PhoneIcon";
+import TiktokIcon from "@remixicons/react/line/TiktokIcon";
 import type { SiteSettings } from "@/lib/getSettings";
 import Image from "next/image";
 
@@ -15,6 +18,7 @@ export default function Header({ settings }: HeaderProps) {
   const brandDomain = settings?.brand_domain || "raygraphy.co";
   const phone = settings?.contact_phone || "";
   const instagram = settings?.instagram_url || "";
+  const facebook = settings?.facebook_url || "";
   const tiktok = settings?.tiktok_url || "";
   const logoUrl = settings?.logo_url || "/logo.svg";
 
@@ -55,7 +59,7 @@ export default function Header({ settings }: HeaderProps) {
             aria-label="Call"
             title={phone ? phone : "Set phone in admin/settings"}
           >
-            <Phone size={20} className="text-slate-600" />
+            <PhoneIcon className="h-5 w-5 text-slate-600 fill-current" />
           </a>
 
           {/* Instagram */}
@@ -67,8 +71,9 @@ export default function Header({ settings }: HeaderProps) {
             aria-label="Instagram"
             title={instagram ? "Instagram" : "Set Instagram in admin/settings"}
           >
-            <Instagram size={20} className="text-slate-600" />
+            <InstagramIcon className="h-5 w-5 text-slate-600 fill-current" />
           </a>
+
 
           {/* TikTok */}
           <a
@@ -79,8 +84,21 @@ export default function Header({ settings }: HeaderProps) {
             aria-label="TikTok"
             title={tiktok ? "TikTok" : "Set TikTok in admin/settings"}
           >
-            <Music size={20} className="text-slate-600" />
+            <TiktokIcon className="h-5 w-5 text-slate-600 fill-current" />
           </a>
+
+          {/* Facebook */}
+          <a
+            href={facebook || "#inquiry"}
+            target={facebook ? "_blank" : undefined}
+            rel={facebook ? "noopener noreferrer" : undefined}
+            className="p-2 hover:bg-slate-100 rounded-lg transition"
+            aria-label="Facebook"
+            title={facebook ? "Facebook" : "Set Facebook in admin/settings"}
+          >
+            <FacebookCircleIcon className="h-5 w-5 text-slate-600 fill-current" />
+          </a>
+
         </div>
       </div>
 

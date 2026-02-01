@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import ArrowLeftSIcon from "@remixicons/react/line/ArrowLeftSIcon";
+import ArrowRightSIcon from "@remixicons/react/line/ArrowRightSIcon";
 import { supabase } from "@/lib/supabaseClient";
 
 type SlotStatus = "available" | "booked";
@@ -187,7 +188,7 @@ export default function CalendarSection({
                 className="p-2 sm:p-3 hover:bg-slate-100 rounded-lg transition"
                 aria-label="Previous month"
               >
-                <ChevronLeft className="h-5 w-5 text-slate-900" strokeWidth={2.5} />
+                <ArrowLeftSIcon className="h-5 w-5 text-slate-900 fill-current" />
               </button>
 
               <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
@@ -207,7 +208,7 @@ export default function CalendarSection({
                 className="p-2 sm:p-3 hover:bg-slate-100 rounded-lg transition"
                 aria-label="Next month"
               >
-                <ChevronRight className="h-5 w-5 text-slate-900" strokeWidth={2.5} />
+                <ArrowRightSIcon className="h-5 w-5 text-slate-900 fill-current" />
               </button>
             </div>
 

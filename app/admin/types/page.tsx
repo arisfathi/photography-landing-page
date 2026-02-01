@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { getSession, isAdmin } from "@/lib/auth";
 import { useRouter } from "next/navigation";
-import { Trash2, Plus } from "lucide-react";
+import AddIcon from "@remixicons/react/line/AddIcon";
+import DeleteBinIcon from "@remixicons/react/line/DeleteBinIcon";
 
 type PhotographyType = {
   id: string;
@@ -321,7 +322,7 @@ export default function AdminTypesPage() {
               onClick={() => setShowForm(true)}
               className="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-white font-bold hover:bg-green-700 transition text-sm sm:text-base"
             >
-              <Plus size={20} />
+              <AddIcon className="h-5 w-5 fill-current" />
               Add Type
             </button>
           </div>
@@ -373,7 +374,7 @@ export default function AdminTypesPage() {
                       className="rounded-lg bg-red-100 p-2 text-red-700 hover:bg-red-200 transition disabled:opacity-60"
                       title="Delete type"
                     >
-                      <Trash2 size={18} />
+                      <DeleteBinIcon className="h-[18px] w-[18px] fill-current" />
                     </button>
                   </div>
                 </div>

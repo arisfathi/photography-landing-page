@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import type { PackageCategory } from "@/lib/types";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import ArrowLeftSIcon from "@remixicons/react/line/ArrowLeftSIcon";
+import ArrowRightSIcon from "@remixicons/react/line/ArrowRightSIcon";
 import { supabase } from "@/lib/supabaseClient";
 import { getPhotographyTypes } from "@/lib/getPhotographyTypes";
 import type { PhotographyType } from "@/lib/getPhotographyTypes";
@@ -161,7 +162,7 @@ export default function PortfolioSection({
             className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full shadow-lg p-2 hover:bg-slate-50 transition lg:flex hidden items-center justify-center"
             aria-label="Scroll left"
           >
-            <ChevronLeft size={24} className="text-slate-900" />
+            <ArrowLeftSIcon className="h-6 w-6 text-slate-900 fill-current" />
           </button>
 
           {/* Image Container */}
@@ -206,7 +207,7 @@ export default function PortfolioSection({
             className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full shadow-lg p-2 hover:bg-slate-50 transition lg:flex hidden items-center justify-center"
             aria-label="Scroll right"
           >
-            <ChevronRight size={24} className="text-slate-900" />
+            <ArrowRightSIcon className="h-6 w-6 text-slate-900 fill-current" />
           </button>
         </div>
 
