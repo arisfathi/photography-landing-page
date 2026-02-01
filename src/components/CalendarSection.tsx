@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
 type SlotStatus = "available" | "booked";
-type ServiceType = "portrait" | "event" | "wedding";
+type ServiceType = "convocation" | "wedding" | "event";
 
 type AvailabilityRow = {
   id: string;
@@ -162,9 +162,14 @@ export default function CalendarSection({
   const monthName = monthLabel(currentDate);
 
   return (
-    <section id="calendar" className="py-12 px-4 bg-slate-50">
+    <section
+      id="calendar"
+      className="py-10 sm:py-12 px-3 sm:px-4 bg-slate-50 overflow-x-hidden"
+    >
       <div className="max-w-6xl mx-auto">
-        <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-8">Check Availability</h2>
+        <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-6 sm:mb-8">
+          Check Availability
+        </h2>
 
         {err && (
           <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-red-800 font-medium">
@@ -172,24 +177,26 @@ export default function CalendarSection({
           </div>
         )}
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-3 gap-6 sm:gap-8">
           {/* Calendar Grid */}
-          <div className="lg:col-span-2 bg-white rounded-lg shadow-md p-6">
+          <div className="lg:col-span-2 bg-white rounded-lg shadow-md p-4 sm:p-6">
             {/* Month Navigation */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-5 sm:mb-6">
               <button
                 onClick={handlePrevMonth}
-                className="p-10 hover:bg-slate-900 rounded-lg transition"
+                className="p-2 sm:p-3 hover:bg-slate-100 rounded-lg transition"
                 aria-label="Previous month"
               >
                 <ChevronLeft className="h-5 w-5 text-slate-900" strokeWidth={2.5} />
               </button>
 
-              <div className="flex items-center gap-3">
-                <h3 className="text-lg font-semibold text-slate-900">{monthName}</h3>
+              <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
+                <h3 className="text-base sm:text-lg font-semibold text-slate-900 text-center">
+                  {monthName}
+                </h3>
                 <button
                   onClick={fetchMonth}
-                  className="text-xs font-bold rounded-lg border border-slate-200 px-3 py-2 hover:bg-slate-50 transition"
+                  className="text-xs font-bold rounded-lg border border-slate-200 px-2 py-1 sm:px-3 sm:py-2 hover:bg-slate-50 transition"
                 >
                   {loading ? "Loading..." : "Refresh"}
                 </button>
@@ -197,7 +204,7 @@ export default function CalendarSection({
 
               <button
                 onClick={handleNextMonth}
-                className="p-10 hover:bg-slate-900 rounded-lg transition"
+                className="p-2 sm:p-3 hover:bg-slate-100 rounded-lg transition"
                 aria-label="Next month"
               >
                 <ChevronRight className="h-5 w-5 text-slate-900" strokeWidth={2.5} />
@@ -205,16 +212,19 @@ export default function CalendarSection({
             </div>
 
             {/* Weekday Headers */}
-            <div className="grid grid-cols-7 gap-2 mb-4">
+            <div className="grid grid-cols-7 gap-1.5 sm:gap-2 mb-3 sm:mb-4">
               {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-                <div key={day} className="text-center text-sm font-semibold text-slate-600">
+                <div
+                  key={day}
+                  className="text-center text-xs sm:text-sm font-semibold text-slate-600"
+                >
                   {day}
                 </div>
               ))}
             </div>
 
             {/* Days Grid */}
-            <div className="grid grid-cols-7 gap-2">
+            <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
               {days.map((day, idx) => {
                 if (day === null) return <div key={`empty-${idx}`} />;
 
@@ -227,7 +237,7 @@ export default function CalendarSection({
                     key={dateStr}
                     onClick={() => handleSelectDay(day)}
                     className={`
-                      aspect-square rounded-lg font-semibold transition text-sm
+                      aspect-square rounded-lg font-semibold transition text-xs sm:text-sm
                       ${
                         isSelected
                           ? "bg-slate-900 text-white ring-2 ring-slate-900"
@@ -245,8 +255,8 @@ export default function CalendarSection({
           </div>
 
           {/* Slots Display (view-only) */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">
+          <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+            <h3 className="text-base sm:text-lg font-semibold text-slate-900 mb-3 sm:mb-4">
               {selectedDay ? "Availability Details" : "Select a Date"}
             </h3>
 
@@ -254,7 +264,6 @@ export default function CalendarSection({
               availability.slots.length > 0 ? (
                 <div className="space-y-2">
                   {availability.slots.map((slot: any, idx: number) => {
-                    // If full day booked, everything is effectively booked (view-only)
                     const effectiveBooked = selectedDayIsFullBooked || slot.status === "booked";
 
                     return (
