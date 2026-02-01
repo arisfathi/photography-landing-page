@@ -47,24 +47,27 @@ export default function Home() {
             Capturing moments, creating memories
           </p>
           <p className="text-slate-400 text-sm md:text-base max-w-2xl mx-auto">
-            Portrait, event, and wedding photography that tells your unique story.
+            Convocation, wedding, and event photography that tells your unique story.
           </p>
         </div>
       </section>
-
-      <CalendarSection
-        onDateSelect={handleDateSelect}
-        selectedDate={selectedDate}
-        selectedTime={selectedTime}
-      />
 
       <PortfolioSection
         selectedCategory={selectedCategory}
         onCategoryChange={setSelectedCategory}
       />
 
-      <PackagesSection selectedCategory={selectedCategory} settings={settings} />
+      <PackagesSection 
+        selectedCategory={selectedCategory} 
+        settings={settings} 
+      />
 
+      <CalendarSection
+        onDateSelect={handleDateSelect}
+        selectedDate={selectedDate}
+        selectedTime={selectedTime}
+      />
+      
       <InquirySection
         selectedDate={selectedDate}
         selectedTime={selectedTime}
@@ -73,7 +76,7 @@ export default function Home() {
 
       <footer className="bg-slate-900 text-slate-300 py-8 px-4">
         <div className="max-w-6xl mx-auto text-center text-sm">
-          <p>&copy; 2026 Raygraphy. All rights reserved.</p>
+          <p>&copy; 2026 Raygraphy.co All rights reserved.</p>
           <p className="mt-2">Professional Photography Services</p>
         </div>
       </footer>
