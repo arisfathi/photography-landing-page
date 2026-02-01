@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { getSession, signOut } from "@/lib/auth";
 import CalendarIcon from "@remixicons/react/line/CalendarIcon";
 import Box3Icon from "@remixicons/react/line/Box3Icon";
+import GalleryUploadIcon from "@remixicons/react/line/GalleryUploadIcon";
 import ImageIcon from "@remixicons/react/line/ImageIcon";
 import LogoutBoxRIcon from "@remixicons/react/line/LogoutBoxRIcon";
 import SettingsIcon from "@remixicons/react/line/SettingsIcon";
@@ -101,6 +102,12 @@ export default function AdminPage() {
       href: "/admin/portfolio",
       icon: ImageIcon,
       description: "Manage portfolio items",
+    },
+    {
+      name: "Gallery",
+      href: "/admin/gallery",
+      icon: GalleryUploadIcon,
+      description: "Manage gallery images",
     },
   ];
 

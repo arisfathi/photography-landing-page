@@ -26,6 +26,24 @@ export default function Home() {
     })();
   }, []);
 
+  useEffect(() => {
+    const scrollToHash = () => {
+      if (typeof window === "undefined") return;
+      const hash = window.location.hash;
+      if (!hash) return;
+      const id = hash.replace("#", "");
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    };
+
+    // Run on initial load and on hash changes
+    scrollToHash();
+    window.addEventListener("hashchange", scrollToHash);
+    return () => window.removeEventListener("hashchange", scrollToHash);
+  }, []);
+
   const handleDateSelect = (date: string, time: string) => {
     setSelectedDate(date);
     setSelectedTime(time);

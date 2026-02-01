@@ -151,3 +151,44 @@ CREATE POLICY site_settings_read ON site_settings
 -- ============================================
 -- 1. Make sure the "site-assets" storage bucket exists in Supabase UI
 -- 2. public.is_admin() must exist
+
+-- ============================================
+-- GALLERY IMAGES TABLE
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS gallery_images (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  url TEXT NOT NULL,
+  path TEXT NOT NULL,
+  category TEXT NULL,
+  sort_order INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_gallery_images_category ON gallery_images(category);
+CREATE INDEX IF NOT EXISTS idx_gallery_images_active ON gallery_images(is_active);
+CREATE INDEX IF NOT EXISTS idx_gallery_images_sort ON gallery_images(sort_order, created_at);
+
+ALTER TABLE gallery_images ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS gallery_images_read ON gallery_images;
+CREATE POLICY gallery_images_read ON gallery_images
+  FOR SELECT
+  USING (true);
+
+DROP POLICY IF EXISTS gallery_images_insert ON gallery_images;
+CREATE POLICY gallery_images_insert ON gallery_images
+  FOR INSERT
+  WITH CHECK (public.is_admin(auth.uid()));
+
+DROP POLICY IF EXISTS gallery_images_update ON gallery_images;
+CREATE POLICY gallery_images_update ON gallery_images
+  FOR UPDATE
+  USING (public.is_admin(auth.uid()))
+  WITH CHECK (public.is_admin(auth.uid()));
+
+DROP POLICY IF EXISTS gallery_images_delete ON gallery_images;
+CREATE POLICY gallery_images_delete ON gallery_images
+  FOR DELETE
+  USING (public.is_admin(auth.uid()));

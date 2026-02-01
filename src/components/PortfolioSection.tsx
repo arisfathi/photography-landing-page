@@ -2,9 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import type { PackageCategory } from "@/lib/types";
 import ArrowLeftSIcon from "@remixicons/react/line/ArrowLeftSIcon";
 import ArrowRightSIcon from "@remixicons/react/line/ArrowRightSIcon";
+import Image2Icon from "@remixicons/react/line/Image2Icon";
 import { supabase } from "@/lib/supabaseClient";
 import { getPhotographyTypes } from "@/lib/getPhotographyTypes";
 import type { PhotographyType } from "@/lib/getPhotographyTypes";
@@ -209,6 +211,17 @@ export default function PortfolioSection({
           >
             <ArrowRightSIcon className="h-6 w-6 text-slate-900 fill-current" />
           </button>
+        </div>
+
+        {/* CTA */}
+        <div className="mt-8 flex justify-center">
+          <Link
+            href="/gallery?category=convocation"
+            className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-6 py-3 text-sm font-bold text-white shadow-md hover:bg-slate-800 transition"
+          >
+            <Image2Icon className="h-4 w-4 fill-current" />
+            View Portfolio Gallery
+          </Link>
         </div>
 
         {/* Mobile Swipe Hint */}

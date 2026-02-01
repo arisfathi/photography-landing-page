@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import FacebookCircleIcon from "@remixicons/react/line/FacebookCircleIcon";
 import InstagramIcon from "@remixicons/react/line/InstagramIcon";
 import PhoneIcon from "@remixicons/react/line/PhoneIcon";
@@ -14,6 +15,7 @@ type HeaderProps = {
 };
 
 export default function Header({ settings }: HeaderProps) {
+  const pathname = usePathname();
   const brand = settings?.brand_name || "Raygraphy";
   const brandDomain = settings?.brand_domain || "raygraphy.co";
   const phone = settings?.contact_phone || "";
@@ -21,6 +23,7 @@ export default function Header({ settings }: HeaderProps) {
   const facebook = settings?.facebook_url || "";
   const tiktok = settings?.tiktok_url || "";
   const logoUrl = settings?.logo_url || "/logo.svg";
+  const isGallery = pathname === "/gallery";
 
   return (
     <header className="sticky top-0 z-50 bg-white shadow-sm">
@@ -37,16 +40,24 @@ export default function Header({ settings }: HeaderProps) {
         </div>
 
         <nav className="hidden md:flex items-center gap-8 text-slate-600 text-sm font-medium">
-          <Link href="#calendar" className="hover:text-slate-900 transition">
-            Calendar
-          </Link>
-          <Link href="#portfolio" className="hover:text-slate-900 transition">
+          <Link href="/#portfolio" className="hover:text-slate-900 transition">
             Portfolio
           </Link>
-          <Link href="#packages" className="hover:text-slate-900 transition">
+          <Link
+            href="/gallery"
+            className={`hover:text-slate-900 transition ${
+              isGallery ? "text-slate-900 font-semibold" : ""
+            }`}
+          >
+            Gallery
+          </Link>
+          <Link href="/#packages" className="hover:text-slate-900 transition">
             Packages
           </Link>
-          <Link href="#inquiry" className="hover:text-slate-900 transition">
+                    <Link href="/#calendar" className="hover:text-slate-900 transition">
+            Calendar
+          </Link>
+          <Link href="/#inquiry" className="hover:text-slate-900 transition">
             Inquiry
           </Link>
         </nav>
@@ -103,16 +114,24 @@ export default function Header({ settings }: HeaderProps) {
       </div>
 
       <div className="md:hidden bg-slate-50 border-t border-slate-200 px-3 sm:px-4 py-3 flex justify-center gap-4 text-xs sm:text-sm font-medium overflow-x-hidden">
-        <Link href="#calendar" className="text-slate-600 hover:text-slate-900 whitespace-nowrap">
+        <Link href="/#calendar" className="text-slate-600 hover:text-slate-900 whitespace-nowrap">
           Calendar
         </Link>
-        <Link href="#portfolio" className="text-slate-600 hover:text-slate-900 whitespace-nowrap">
+        <Link href="/#portfolio" className="text-slate-600 hover:text-slate-900 whitespace-nowrap">
           Portfolio
         </Link>
-        <Link href="#packages" className="text-slate-600 hover:text-slate-900 whitespace-nowrap">
+        <Link
+          href="/gallery"
+          className={`text-slate-600 hover:text-slate-900 whitespace-nowrap ${
+            isGallery ? "text-slate-900 font-semibold" : ""
+          }`}
+        >
+          Gallery
+        </Link>
+        <Link href="/#packages" className="text-slate-600 hover:text-slate-900 whitespace-nowrap">
           Packages
         </Link>
-        <Link href="#inquiry" className="text-slate-600 hover:text-slate-900 whitespace-nowrap">
+        <Link href="/#inquiry" className="text-slate-600 hover:text-slate-900 whitespace-nowrap">
           Inquiry
         </Link>
       </div>
