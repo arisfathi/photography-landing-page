@@ -9,6 +9,10 @@ export type SiteSettings = {
   whatsapp_number: string | null; // wa.me number without +
   instagram_url: string | null;
   tiktok_url: string | null;
+  hero_banner_url: string | null;
+  hero_title: string | null;
+  hero_subtitle: string | null;
+  hero_tagline: string | null;
   updated_at: string | null;
 };
 

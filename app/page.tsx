@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { PackageCategory } from "@/lib/types"; // only for the type if you still use it
 import Header from "@/components/Header";
+import HeroSection from "@/components/HeroSection";
 import CalendarSection from "@/components/CalendarSection";
 import PortfolioSection from "@/components/PortfolioSection";
 import PackagesSection from "@/components/PackagesSection";
@@ -37,20 +38,7 @@ export default function Home() {
     <main className="min-h-screen bg-white">
       <Header settings={settings} />
 
-      {/* Hero */}
-      <section className="bg-gradient-to-br from-slate-900 to-slate-800 text-white py-20 px-4">
-        <div className="max-w-6xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
-            Professional Photography
-          </h1>
-          <p className="text-lg md:text-xl text-slate-300 mb-4">
-            Capturing moments, creating memories
-          </p>
-          <p className="text-slate-400 text-sm md:text-base max-w-2xl mx-auto">
-            Convocation, wedding, and event photography that tells your unique story.
-          </p>
-        </div>
-      </section>
+      <HeroSection settings={settings} />
 
       <PortfolioSection
         selectedCategory={selectedCategory}
@@ -76,7 +64,7 @@ export default function Home() {
 
       <footer className="bg-slate-900 text-slate-300 py-8 px-4">
         <div className="max-w-6xl mx-auto text-center text-sm">
-          <p>&copy; 2026 Raygraphy.co All rights reserved.</p>
+          <p>&copy; 2026 raygraphy.co All rights reserved.</p>
           <p className="mt-2">Professional Photography Services</p>
         </div>
       </footer>

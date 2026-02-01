@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSession, signOut } from "@/lib/auth";
-import { Settings, Calendar, Package, Image, LogOut } from "lucide-react";
+import { Settings, Calendar, Package, Image, LogOut, Layers } from "lucide-react";
 
 interface User {
   email: string;
@@ -72,6 +72,12 @@ export default function AdminPage() {
       href: "/admin/settings",
       icon: Settings,
       description: "Manage site settings",
+    },
+    {
+      name: "Photography Types",
+      href: "/admin/types",
+      icon: Layers,
+      description: "Manage photography types",
     },
     {
       name: "Availability",

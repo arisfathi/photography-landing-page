@@ -19,6 +19,14 @@ type PortfolioPhotoRow = {
   created_at: string;
 };
 
+type PhotographyType = {
+  id: string;
+  name: string;
+  slug: string;
+  is_active: boolean;
+  sort_order: number;
+};
+
 interface PortfolioSectionProps {
   selectedCategory: PackageCategory;
   onCategoryChange: (category: PackageCategory) => void;
@@ -30,7 +38,8 @@ export default function PortfolioSection({
 }: PortfolioSectionProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const categories: PackageCategory[] = ["convocation", "wedding", "event"];
+  const [categories, setCategories] = useState<PackageCategory[]>([]);
+  const [types, setTypes] = useState<PhotographyType[]>([]);
 
   const [images, setImages] = useState<
     { id: string; src: string; alt: string; title: string }[]
@@ -38,6 +47,42 @@ export default function PortfolioSection({
 
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  // Load photography types from DB
+  useEffect(() => {
+    const loadTypes = async () => {
+      const { data, error } = await supabase
+        .from("photography_types")
+        .select("*")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true })
+        .order("name", { ascending: true });
+
+      if (error) {
+        console.error("Error loading types:", error);
+        // Fallback to hardcoded categories
+        setCategories(CATEGORIES);
+        setTypes([]);
+      } else if (data && data.length > 0) {
+        // Use DB types, map slug to category
+        const dbTypes = (data as PhotographyType[]);
+        setTypes(dbTypes);
+        const slugs = dbTypes.map((t) => t.slug as PackageCategory);
+        setCategories(slugs);
+        // Set first category as selected if current selection is not in the list
+        if (!slugs.includes(selectedCategory) && slugs.length > 0) {
+          onCategoryChange(slugs[0]);
+        }
+      } else {
+        // No types in DB, use fallback
+        setCategories(CATEGORIES);
+        setTypes([]);
+      }
+    };
+
+    loadTypes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     fetchPortfolio();
@@ -87,8 +132,11 @@ export default function PortfolioSection({
     });
   };
 
-  const getCategoryLabel = (cat: PackageCategory): string => {
-    return cat.charAt(0).toUpperCase() + cat.slice(1);
+  const getTypeLabel = (slug: string): string => {
+    const type = types.find((t) => t.slug === slug);
+    if (type) return type.name;
+    // Fallback to slug
+    return slug.charAt(0).toUpperCase() + slug.slice(1);
   };
 
   return (

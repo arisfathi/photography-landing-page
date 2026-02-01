@@ -16,17 +16,18 @@ export default function Header({ settings }: HeaderProps) {
   const phone = settings?.contact_phone || "";
   const instagram = settings?.instagram_url || "";
   const tiktok = settings?.tiktok_url || "";
+  const logoUrl = settings?.logo_url || "/logo.svg";
 
   return (
     <header className="sticky top-0 z-50 bg-white shadow-sm">
-      <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-10 h-10 bg-gradient-to-br from-slate-900 to-slate-700 rounded-lg flex items-center justify-center">
             <div className="w-10 h-10 bg-white rounded-lg border border-slate-200 flex items-center justify-center overflow-hidden">
-            <Image src="/logo.svg" alt="Raygraphy logo" width={256} height={256} />
+            <Image src={logoUrl} alt="Raygraphy logo" width={256} height={256} />
           </div>
           </div>
-          <span className="text-xl font-bold text-slate-900">
+          <span className="text-lg sm:text-xl font-bold text-slate-900">
             {brandDomain || brand}
           </span>
         </div>
@@ -46,7 +47,7 @@ export default function Header({ settings }: HeaderProps) {
           </Link>
         </nav>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           {/* Phone */}
           <a
             href={phone ? `tel:${phone}` : "#inquiry"}
@@ -83,7 +84,7 @@ export default function Header({ settings }: HeaderProps) {
         </div>
       </div>
 
-      <div className="md:hidden bg-slate-50 border-t border-slate-200 px-4 py-3 flex gap-4 overflow-x-auto text-xs font-medium">
+      <div className="md:hidden bg-slate-50 border-t border-slate-200 px-3 sm:px-4 py-3 flex justify-center gap-4 text-xs sm:text-sm font-medium overflow-x-hidden">
         <Link href="#calendar" className="text-slate-600 hover:text-slate-900 whitespace-nowrap">
           Calendar
         </Link>
