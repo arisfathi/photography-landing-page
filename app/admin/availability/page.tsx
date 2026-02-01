@@ -4,18 +4,19 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { getSession, isAdmin } from "@/lib/auth";
-import { CATEGORIES, getCategoryLabel } from "@/lib/categories";
+import { getPhotographyTypes } from "@/lib/getPhotographyTypes";
+import type { PhotographyType } from "@/lib/getPhotographyTypes";
 
 
 type SlotStatus = "available" | "booked";
-type ServiceType = "convocation" | "wedding" | "event";
+type ServiceTypeSlug = string;
 
 type AvailabilityRow = {
   id: string;
   date: string; // YYYY-MM-DD
   slot_time: string | null; // HH:MM:SS or null
   is_full_day: boolean;
-  service_type: ServiceType | null;
+  service_type: ServiceTypeSlug | null;
   status: SlotStatus;
   note: string | null;
   created_at: string;
@@ -41,12 +42,13 @@ export default function AdminAvailabilityPage() {
   const [selectedDate, setSelectedDate] = useState<string>(todayISO());
   const [slots, setSlots] = useState<AvailabilityRow[]>([]);
   const [loading, setLoading] = useState(false);
+  const [types, setTypes] = useState<PhotographyType[]>([]);
 
   // Add form state
   const [type, setType] = useState<"time_slot" | "full_day">("time_slot");
   const [time, setTime] = useState<string>("10:00");
   const [status, setStatus] = useState<SlotStatus>("available");
-  const [serviceType, setServiceType] = useState<ServiceType | "">("");
+  const [serviceType, setServiceType] = useState<ServiceTypeSlug | "">("");
   const [note, setNote] = useState<string>("");
 
   const [msg, setMsg] = useState<string | null>(null);
@@ -80,6 +82,14 @@ export default function AdminAvailabilityPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate, checking]);
 
+  useEffect(() => {
+    if (checking) return;
+    (async () => {
+      const list = await getPhotographyTypes();
+      setTypes(list);
+    })();
+  }, [checking]);
+
   const fetchSlots = async () => {
     setLoading(true);
     setErr(null);
@@ -111,6 +121,10 @@ export default function AdminAvailabilityPage() {
       return ta.localeCompare(tb);
     });
   }, [slots]);
+
+  const typeLabelMap = useMemo(() => {
+    return new Map(types.map((t) => [t.slug, t.name]));
+  }, [types]);
 
   const onAddSlot = async () => {
     setErr(null);
@@ -287,9 +301,11 @@ export default function AdminAvailabilityPage() {
                 className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:ring-2 focus:ring-slate-900"
               >
                 <option value="">(none)</option>
-                <option value="convocation">Convocation</option>
-                <option value="wedding">Wedding</option>
-                <option value="event">Event</option>
+                {types.map((t) => (
+                  <option key={t.id} value={t.slug}>
+                    {t.name}
+                  </option>
+                ))}
               </select>
 
               <label className="mt-4 block text-sm font-bold text-slate-900">
@@ -353,7 +369,7 @@ export default function AdminAvailabilityPage() {
 
                       {row.service_type && (
                         <span className="rounded-lg bg-blue-100 px-3 py-1 text-xs font-bold text-blue-800">
-                          {row.service_type.toUpperCase()}
+                          {typeLabelMap.get(row.service_type) ?? row.service_type.toUpperCase()}
                         </span>
                       )}
                     </div>

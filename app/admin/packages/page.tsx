@@ -4,9 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { getSession, isAdmin } from "@/lib/auth";
-import { CATEGORIES, getCategoryLabel } from "@/lib/categories";
+import { getPhotographyTypes } from "@/lib/getPhotographyTypes";
+import type { PhotographyType } from "@/lib/getPhotographyTypes";
 
-type PackageCategory = "convocation" | "wedding" | "event";
+type PackageCategory = string;
 
 type PackageRow = {
   id: string;
@@ -63,6 +64,7 @@ export default function AdminPackagesPage() {
   const [category, setCategory] = useState<PackageCategory>("convocation");
   const [packages, setPackages] = useState<PackageRow[]>([]);
   const [loading, setLoading] = useState(false);
+  const [types, setTypes] = useState<PhotographyType[]>([]);
 
   const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState<PackageForm>(emptyForm("convocation"));
@@ -90,6 +92,17 @@ export default function AdminPackagesPage() {
       setChecking(false);
     })();
   }, [router]);
+
+  useEffect(() => {
+    if (checking) return;
+    (async () => {
+      const list = await getPhotographyTypes();
+      setTypes(list);
+      if (list.length > 0 && !list.some((t) => t.slug === category)) {
+        setCategory(list[0].slug);
+      }
+    })();
+  }, [checking]);
 
   useEffect(() => {
     if (checking) return;
@@ -125,6 +138,17 @@ export default function AdminPackagesPage() {
       return a.created_at.localeCompare(b.created_at);
     });
   }, [packages]);
+
+  const getTypeLabel = (slug: string): string => {
+    const match = types.find((t) => t.slug === slug);
+    if (match) return match.name;
+    return slug.charAt(0).toUpperCase() + slug.slice(1);
+  };
+
+  const categoryOptions = useMemo(() => {
+    if (types.length > 0) return types.map((t) => ({ slug: t.slug, label: t.name }));
+    return [{ slug: category, label: getTypeLabel(category) }];
+  }, [types, category]);
 
   const openAdd = () => {
     setErr(null);
@@ -253,17 +277,17 @@ export default function AdminPackagesPage() {
 
         {/* Category Tabs */}
         <div className="mt-6 flex flex-wrap gap-2">
-          {(["convocation", "wedding", "event"] as PackageCategory[]).map((c) => (
+          {categoryOptions.map((c) => (
             <button
-              key={c}
-              onClick={() => setCategory(c)}
+              key={c.slug}
+              onClick={() => setCategory(c.slug)}
               className={`rounded-lg px-4 py-2 text-sm font-bold transition ${
-                category === c
+                category === c.slug
                   ? "bg-slate-900 text-white"
                   : "bg-white border border-slate-300 text-slate-900 hover:bg-slate-100"
               }`}
             >
-              {c.charAt(0).toUpperCase() + c.slice(1)}
+              {c.label}
             </button>
           ))}
 
@@ -281,7 +305,7 @@ export default function AdminPackagesPage() {
         <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold text-slate-900">
-              {category.charAt(0).toUpperCase() + category.slice(1)} Packages
+              {getTypeLabel(category)} Packages
             </h2>
             <button
               onClick={fetchPackages}
@@ -393,9 +417,11 @@ export default function AdminPackagesPage() {
                     }
                     className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:ring-2 focus:ring-slate-900"
                   >
-                    <option value="convocation">Convocation</option>
-                    <option value="wedding">Wedding</option>
-                    <option value="event">Event</option>
+                    {categoryOptions.map((c) => (
+                      <option key={c.slug} value={c.slug}>
+                        {c.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
 

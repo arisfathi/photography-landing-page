@@ -5,14 +5,14 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
 type SlotStatus = "available" | "booked";
-type ServiceType = "convocation" | "wedding" | "event";
+type ServiceTypeSlug = string;
 
 type AvailabilityRow = {
   id: string;
   date: string; // YYYY-MM-DD
   slot_time: string | null; // HH:MM:SS or null
   is_full_day: boolean;
-  service_type: ServiceType | null;
+  service_type: ServiceTypeSlug | null;
   status: SlotStatus;
   note: string | null;
   created_at: string;

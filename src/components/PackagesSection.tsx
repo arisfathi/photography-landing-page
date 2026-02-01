@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import type { SiteSettings } from "@/lib/getSettings";
 import { supabase } from "@/lib/supabaseClient";
-import { CATEGORIES, getCategoryLabel } from "@/lib/categories";
 import type { PackageCategory } from "@/lib/types";
+import { getPhotographyTypes } from "@/lib/getPhotographyTypes";
+import type { PhotographyType } from "@/lib/getPhotographyTypes";
 
 type PackageRow = {
   id: string;
@@ -28,6 +29,7 @@ export default function PackagesSection({ selectedCategory, settings }: Packages
   const [loading, setLoading] = useState(false);
   const [packages, setPackages] = useState<PackageRow[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [types, setTypes] = useState<PhotographyType[]>([]);
 
   const waNumber = settings?.whatsapp_number || ""; // no + sign
 
@@ -35,6 +37,13 @@ export default function PackagesSection({ selectedCategory, settings }: Packages
     fetchPackages();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategory]);
+
+  useEffect(() => {
+    (async () => {
+      const list = await getPhotographyTypes();
+      setTypes(list);
+    })();
+  }, []);
 
   const fetchPackages = async () => {
     setLoading(true);
@@ -60,6 +69,8 @@ export default function PackagesSection({ selectedCategory, settings }: Packages
   };
 
   const getCategoryLabel = (category: PackageCategory): string => {
+    const match = types.find((t) => t.slug === category);
+    if (match) return match.name;
     return category.charAt(0).toUpperCase() + category.slice(1);
   };
 

@@ -1,16 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { PackageCategory } from "@/lib/types"; // only for the type if you still use it
+import type { PackageCategory } from "@/lib/types"; // slug string
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
 import CalendarSection from "@/components/CalendarSection";
 import PortfolioSection from "@/components/PortfolioSection";
 import PackagesSection from "@/components/PackagesSection";
 import InquirySection from "@/components/InquirySection";
-import { CATEGORIES, getCategoryLabel } from "@/lib/categories";
-
-
 import type { SiteSettings } from "@/lib/getSettings";
 import { getSiteSettings } from "@/lib/getSettings";
 

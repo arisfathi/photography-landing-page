@@ -1,2 +1,2 @@
-export type PackageCategory = "convocation" | "wedding" | "event";
+export type PackageCategory = string;
 

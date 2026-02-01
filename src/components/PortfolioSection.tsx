@@ -5,7 +5,8 @@ import Image from "next/image";
 import type { PackageCategory } from "@/lib/types";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-import { CATEGORIES, getCategoryLabel } from "@/lib/categories";
+import { getPhotographyTypes } from "@/lib/getPhotographyTypes";
+import type { PhotographyType } from "@/lib/getPhotographyTypes";
 
 
 type PortfolioPhotoRow = {
@@ -17,14 +18,6 @@ type PortfolioPhotoRow = {
   sort_order: number | null;
   is_active: boolean;
   created_at: string;
-};
-
-type PhotographyType = {
-  id: string;
-  name: string;
-  slug: string;
-  is_active: boolean;
-  sort_order: number;
 };
 
 interface PortfolioSectionProps {
@@ -51,32 +44,16 @@ export default function PortfolioSection({
   // Load photography types from DB
   useEffect(() => {
     const loadTypes = async () => {
-      const { data, error } = await supabase
-        .from("photography_types")
-        .select("*")
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true })
-        .order("name", { ascending: true });
-
-      if (error) {
-        console.error("Error loading types:", error);
-        // Fallback to hardcoded categories
-        setCategories(CATEGORIES);
-        setTypes([]);
-      } else if (data && data.length > 0) {
-        // Use DB types, map slug to category
-        const dbTypes = (data as PhotographyType[]);
-        setTypes(dbTypes);
-        const slugs = dbTypes.map((t) => t.slug as PackageCategory);
+      const list = await getPhotographyTypes();
+      setTypes(list);
+      if (list.length > 0) {
+        const slugs = list.map((t) => t.slug as PackageCategory);
         setCategories(slugs);
-        // Set first category as selected if current selection is not in the list
         if (!slugs.includes(selectedCategory) && slugs.length > 0) {
           onCategoryChange(slugs[0]);
         }
       } else {
-        // No types in DB, use fallback
-        setCategories(CATEGORIES);
-        setTypes([]);
+        setCategories([selectedCategory]);
       }
     };
 
@@ -163,7 +140,7 @@ export default function PortfolioSection({
                     }
                   `}
                 >
-                  {getCategoryLabel(cat)}
+                  {getTypeLabel(cat)}
                 </button>
               ))}
             </div>

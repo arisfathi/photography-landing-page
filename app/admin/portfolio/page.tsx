@@ -4,10 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { getSession, isAdmin } from "@/lib/auth";
-import { CATEGORIES, getCategoryLabel } from "@/lib/categories";
+import { getPhotographyTypes } from "@/lib/getPhotographyTypes";
+import type { PhotographyType } from "@/lib/getPhotographyTypes";
 
 
-type Category = "convocation" | "wedding" | "event";
+type Category = string;
 
 type PhotoRow = {
   id: string;
@@ -32,6 +33,7 @@ export default function AdminPortfolioPage() {
   const [category, setCategory] = useState<Category>("convocation");
   const [photos, setPhotos] = useState<PhotoRow[]>([]);
   const [loading, setLoading] = useState(false);
+  const [types, setTypes] = useState<PhotographyType[]>([]);
 
   // Upload form
   const [file, setFile] = useState<File | null>(null);
@@ -74,6 +76,17 @@ export default function AdminPortfolioPage() {
     })();
   }, [router]);
 
+  useEffect(() => {
+    if (checking) return;
+    (async () => {
+      const list = await getPhotographyTypes();
+      setTypes(list);
+      if (list.length > 0 && !list.some((t) => t.slug === category)) {
+        setCategory(list[0].slug);
+      }
+    })();
+  }, [checking]);
+
   // Fetch photos when category changes
   useEffect(() => {
     if (checking) return;
@@ -109,6 +122,17 @@ export default function AdminPortfolioPage() {
       return a.created_at.localeCompare(b.created_at);
     });
   }, [photos]);
+
+  const getTypeLabel = (slug: string): string => {
+    const match = types.find((t) => t.slug === slug);
+    if (match) return match.name;
+    return slug.charAt(0).toUpperCase() + slug.slice(1);
+  };
+
+  const categoryOptions = useMemo(() => {
+    if (types.length > 0) return types.map((t) => ({ slug: t.slug, label: t.name }));
+    return [{ slug: category, label: getTypeLabel(category) }];
+  }, [types, category]);
 
   const onUpload = async () => {
     setErr(null);
@@ -249,9 +273,11 @@ export default function AdminPortfolioPage() {
               onChange={(e) => setCategory(e.target.value as Category)}
               className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:ring-2 focus:ring-slate-900"
             >
-              <option value="convocation">Convocation</option>
-              <option value="wedding">Wedding</option>
-              <option value="event">Event</option>
+              {categoryOptions.map((c) => (
+                <option key={c.slug} value={c.slug}>
+                  {c.label}
+                </option>
+              ))}
             </select>
 
             <div className="mt-6">
@@ -355,7 +381,7 @@ export default function AdminPortfolioPage() {
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:col-span-2">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-bold text-slate-900">
-                {category.charAt(0).toUpperCase() + category.slice(1)} Photos
+                {getTypeLabel(category)} Photos
               </h2>
               <button
                 onClick={fetchPhotos}
