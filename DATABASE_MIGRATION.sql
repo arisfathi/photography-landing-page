@@ -192,3 +192,23 @@ DROP POLICY IF EXISTS gallery_images_delete ON gallery_images;
 CREATE POLICY gallery_images_delete ON gallery_images
   FOR DELETE
   USING (public.is_admin(auth.uid()));
+
+-- ============================================
+-- CASCADE DELETE: PHOTOGRAPHY TYPES -> PACKAGES + PORTFOLIO
+-- ============================================
+
+ALTER TABLE packages
+  DROP CONSTRAINT IF EXISTS packages_category_fkey;
+
+ALTER TABLE packages
+  ADD CONSTRAINT packages_category_fkey
+  FOREIGN KEY (category) REFERENCES photography_types(slug)
+  ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE portfolio_photos
+  DROP CONSTRAINT IF EXISTS portfolio_photos_category_fkey;
+
+ALTER TABLE portfolio_photos
+  ADD CONSTRAINT portfolio_photos_category_fkey
+  FOREIGN KEY (category) REFERENCES photography_types(slug)
+  ON UPDATE CASCADE ON DELETE CASCADE;

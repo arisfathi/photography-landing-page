@@ -163,11 +163,39 @@ export default function AdminTypesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this type?")) return;
-
-    setDeleting(id);
     setErrorMsg(null);
     setMessage(null);
+
+    const slug = types.find((t) => t.id === id)?.slug ?? "";
+
+    const { count: packagesCount, error: packagesError } = await supabase
+      .from("packages")
+      .select("*", { count: "exact", head: true })
+      .eq("category", slug);
+
+    if (packagesError) {
+      setErrorMsg(packagesError.message);
+      return;
+    }
+
+    const { count: portfolioCount, error: portfolioError } = await supabase
+      .from("portfolio_photos")
+      .select("*", { count: "exact", head: true })
+      .eq("category", slug);
+
+    if (portfolioError) {
+      setErrorMsg(portfolioError.message);
+      return;
+    }
+
+    const typed = prompt(
+      `Deleting this type will also delete ${packagesCount ?? 0} packages and ${
+        portfolioCount ?? 0
+      } portfolio items.\n\nType DELETE to confirm.`
+    );
+    if (typed !== "DELETE") return;
+
+    setDeleting(id);
 
     const { error } = await supabase.from("photography_types").delete().eq("id", id);
 
