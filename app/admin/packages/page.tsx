@@ -110,6 +110,15 @@ export default function AdminPackagesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category, checking]);
 
+  useEffect(() => {
+    if (!formOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [formOpen]);
+
   const fetchPackages = async () => {
     setLoading(true);
     setErr(null);
@@ -388,9 +397,9 @@ export default function AdminPackagesPage() {
 
         {/* Modal */}
         {formOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-            <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-lg border border-slate-200">
-              <div className="flex items-start justify-between gap-3">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl border border-slate-200 max-h-[90vh] flex flex-col">
+              <div className="px-6 py-4 border-b flex items-start justify-between gap-3 sticky top-0 bg-white z-10">
                 <div>
                   <h3 className="text-lg font-bold text-slate-900">
                     {form.id ? "Edit Package" : "Add Package"}
@@ -407,7 +416,7 @@ export default function AdminPackagesPage() {
                 </button>
               </div>
 
-              <div className="mt-4 space-y-4">
+              <div className="px-6 py-4 overflow-y-auto flex-1 space-y-4">
                 <div>
                   <label className="text-sm font-bold text-slate-900">Category</label>
                   <select
@@ -488,23 +497,24 @@ export default function AdminPackagesPage() {
                     className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:ring-2 focus:ring-slate-900"
                   />
                 </div>
+                <div className="h-2" />
+              </div>
 
-                <div className="pt-2 flex items-center gap-2">
-                  <button
-                    onClick={onSave}
-                    disabled={saving}
-                    className="flex-1 rounded-lg bg-slate-900 px-4 py-3 text-white font-bold hover:bg-slate-800 transition disabled:opacity-60"
-                  >
-                    {saving ? "Saving..." : "Save"}
-                  </button>
-                  <button
-                    onClick={closeForm}
-                    disabled={saving}
-                    className="rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 font-bold hover:bg-slate-100 transition disabled:opacity-60"
-                  >
-                    Cancel
-                  </button>
-                </div>
+              <div className="px-6 py-4 border-t flex items-center gap-2 sticky bottom-0 bg-white">
+                <button
+                  onClick={onSave}
+                  disabled={saving}
+                  className="flex-1 rounded-lg bg-slate-900 px-4 py-3 text-white font-bold hover:bg-slate-800 transition disabled:opacity-60"
+                >
+                  {saving ? "Saving..." : "Save"}
+                </button>
+                <button
+                  onClick={closeForm}
+                  disabled={saving}
+                  className="rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 font-bold hover:bg-slate-100 transition disabled:opacity-60"
+                >
+                  Cancel
+                </button>
               </div>
             </div>
           </div>

@@ -14,7 +14,7 @@ export async function getPhotographyTypes(): Promise<PhotographyType[]> {
     .select("id, name, slug, is_active, sort_order")
     .eq("is_active", true)
     .order("sort_order", { ascending: true })
-    .order("name", { ascending: true });
+    .order("created_at", { ascending: true });
 
   if (error) {
     console.error("Error loading photography types:", error);

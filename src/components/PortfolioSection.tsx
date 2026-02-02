@@ -14,7 +14,7 @@ import type { PhotographyType } from "@/lib/getPhotographyTypes";
 
 type PortfolioPhotoRow = {
   id: string;
-  category: PackageCategory;      // "convocation" | "wedding" | "event"
+  category: string;
   title: string | null;
   alt: string | null;
   image_url: string;              // public URL (from storage)
@@ -24,8 +24,8 @@ type PortfolioPhotoRow = {
 };
 
 interface PortfolioSectionProps {
-  selectedCategory: PackageCategory;
-  onCategoryChange: (category: PackageCategory) => void;
+  selectedCategory: PackageCategory | null;
+  onCategoryChange: (category: PackageCategory | null) => void;
 }
 
 export default function PortfolioSection({
@@ -52,11 +52,14 @@ export default function PortfolioSection({
       if (list.length > 0) {
         const slugs = list.map((t) => t.slug as PackageCategory);
         setCategories(slugs);
-        if (!slugs.includes(selectedCategory) && slugs.length > 0) {
+        if (!selectedCategory && slugs.length > 0) {
+          onCategoryChange(slugs[0]);
+        } else if (selectedCategory && !slugs.includes(selectedCategory) && slugs.length > 0) {
           onCategoryChange(slugs[0]);
         }
       } else {
-        setCategories([selectedCategory]);
+        setCategories([]);
+        onCategoryChange(null);
       }
     };
 
@@ -65,6 +68,12 @@ export default function PortfolioSection({
   }, []);
 
   useEffect(() => {
+    if (!selectedCategory) {
+      setImages([]);
+      setErr(null);
+      setLoading(false);
+      return;
+    }
     fetchPortfolio();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategory]);
@@ -72,6 +81,11 @@ export default function PortfolioSection({
   const fetchPortfolio = async () => {
     setLoading(true);
     setErr(null);
+    if (!selectedCategory) {
+      setImages([]);
+      setLoading(false);
+      return;
+    }
 
     const { data, error } = await supabase
       .from("portfolio_photos")
@@ -127,28 +141,30 @@ export default function PortfolioSection({
         </h2>
 
         {/* Category Buttons (same UI) */}
-        <div className="mb-8">
-          <div className="mx-auto w-full max-w-2xl">
-            <div className="grid w-full grid-cols-3 gap-3 rounded-xl bg-slate-100 p-2">
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => onCategoryChange(cat)}
-                  className={`
-                    w-full rounded-lg py-2 text-sm font-semibold transition
-                    ${
-                      selectedCategory === cat
-                        ? "bg-slate-900 text-white shadow"
-                        : "bg-transparent text-slate-600 hover:bg-slate-200"
-                    }
-                  `}
-                >
-                  {getTypeLabel(cat)}
-                </button>
-              ))}
+        {categories.length > 0 && (
+          <div className="mb-8">
+            <div className="mx-auto w-full max-w-2xl">
+              <div className="grid w-full grid-cols-3 gap-3 rounded-xl bg-slate-100 p-2">
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => onCategoryChange(cat)}
+                    className={`
+                      w-full rounded-lg py-2 text-sm font-semibold transition
+                      ${
+                        selectedCategory === cat
+                          ? "bg-slate-900 text-white shadow"
+                          : "bg-transparent text-slate-600 hover:bg-slate-200"
+                      }
+                    `}
+                  >
+                    {getTypeLabel(cat)}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {err && (
           <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-red-800 font-medium text-left">
@@ -156,67 +172,73 @@ export default function PortfolioSection({
           </div>
         )}
 
-        {/* Carousel (same UI) */}
-        <div className="relative">
-          {/* Scroll Buttons */}
-          <button
-            onClick={() => scroll("left")}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full shadow-lg p-2 hover:bg-slate-50 transition lg:flex hidden items-center justify-center"
-            aria-label="Scroll left"
-          >
-            <ArrowLeftSIcon className="h-6 w-6 text-slate-900 fill-current" />
-          </button>
+        {categories.length === 0 ? (
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-8 text-slate-700 font-medium text-left">
+            <p className="text-slate-900 font-bold text-lg">No categories available</p>
+            <p className="mt-2 text-slate-700">Please check back later.</p>
+          </div>
+        ) : (
+          <div className="relative">
+            {/* Scroll Buttons */}
+            <button
+              onClick={() => scroll("left")}
+              className="absolute -left-2 top-1/2 -translate-y-1/2 z-10 h-9 w-9 rounded-full bg-white shadow flex items-center justify-center hover:bg-slate-50 transition lg:flex hidden"
+              aria-label="Scroll left"
+            >
+              <ArrowLeftSIcon className="h-4 w-4 text-slate-900 fill-current" />
+            </button>
 
-          {/* Image Container */}
-          <div
-            ref={scrollContainerRef}
-            className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4"
-            style={{ scrollBehavior: "smooth" }}
-          >
-            {loading ? (
-              <div className="w-full rounded-lg border border-slate-200 bg-slate-50 p-6 text-slate-700 font-medium text-left">
-                Loading...
-              </div>
-            ) : images.length === 0 ? (
-              <div className="w-full rounded-lg border border-slate-200 bg-slate-50 p-6 text-slate-700 font-medium text-left">
-                No photos in this category yet.
-              </div>
-            ) : (
-              images.map((image) => (
-                <div
-                  key={image.id}
-                  className="flex-shrink-0 w-80 h-64 relative rounded-lg overflow-hidden shadow-md hover:shadow-lg transition snap-start"
-                >
-                  <Image
-                    src={image.src}
-                    alt={image.alt}
-                    fill
-                    className="object-cover hover:scale-105 transition duration-300"
-                    sizes="320px"
-                  />
-                  <div className="absolute inset-0 bg-black/30 opacity-0 hover:opacity-100 transition flex items-end justify-start p-4">
-                    <div className="text-white">
-                      <p className="font-semibold text-sm">{image.title}</p>
+            {/* Image Container */}
+            <div
+              ref={scrollContainerRef}
+              className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 px-12"
+              style={{ scrollBehavior: "smooth" }}
+            >
+              {loading ? (
+                <div className="w-full rounded-lg border border-slate-200 bg-slate-50 p-6 text-slate-700 font-medium text-left">
+                  Loading...
+                </div>
+              ) : images.length === 0 ? (
+                <div className="w-full rounded-lg border border-slate-200 bg-slate-50 p-6 text-slate-700 font-medium text-left">
+                  No photos in this category yet.
+                </div>
+              ) : (
+                images.map((image) => (
+                  <div
+                    key={image.id}
+                    className="flex-shrink-0 w-80 h-64 relative rounded-lg overflow-hidden shadow-md hover:shadow-lg transition snap-start"
+                  >
+                    <Image
+                      src={image.src}
+                      alt={image.alt}
+                      fill
+                      className="object-cover hover:scale-105 transition duration-300"
+                      sizes="320px"
+                    />
+                    <div className="absolute inset-0 bg-black/30 opacity-0 hover:opacity-100 transition flex items-end justify-start p-4">
+                      <div className="text-white">
+                        <p className="font-semibold text-sm">{image.title}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
-            )}
-          </div>
+                ))
+              )}
+            </div>
 
-          <button
-            onClick={() => scroll("right")}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full shadow-lg p-2 hover:bg-slate-50 transition lg:flex hidden items-center justify-center"
-            aria-label="Scroll right"
-          >
-            <ArrowRightSIcon className="h-6 w-6 text-slate-900 fill-current" />
-          </button>
-        </div>
+            <button
+              onClick={() => scroll("right")}
+              className="absolute -right-2 top-1/2 -translate-y-1/2 z-10 h-9 w-9 rounded-full bg-white shadow flex items-center justify-center hover:bg-slate-50 transition lg:flex hidden"
+              aria-label="Scroll right"
+            >
+              <ArrowRightSIcon className="h-4 w-4 text-slate-900 fill-current" />
+            </button>
+          </div>
+        )}
 
         {/* CTA */}
         <div className="mt-8 flex justify-center">
           <Link
-            href="/gallery?category=convocation"
+            href={selectedCategory ? `/gallery?category=${selectedCategory}` : "/gallery"}
             className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-6 py-3 text-sm font-bold text-white shadow-md hover:bg-slate-800 transition"
           >
             <Image2Icon className="h-4 w-4 fill-current" />
@@ -225,9 +247,11 @@ export default function PortfolioSection({
         </div>
 
         {/* Mobile Swipe Hint */}
-        <p className="text-center text-slate-500 text-sm mt-4 lg:hidden">
-          Swipe to see more
-        </p>
+        {categories.length > 0 && (
+          <p className="text-center text-slate-500 text-sm mt-4 lg:hidden">
+            Swipe to see more
+          </p>
+        )}
       </div>
     </section>
   );

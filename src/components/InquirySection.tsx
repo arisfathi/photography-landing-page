@@ -31,17 +31,17 @@ export default function InquirySection({
     });
 
   const buildWhatsAppMessage = () => {
-    let message = "Hi Raygraphy! 👋\n\n";
+    let message = "Hi Raygraphy!\n\n";
     message += "I'm interested in your photography services.\n\n";
 
     // DATE-only (time optional)
     if (selectedDate) {
-      message += `📅 Preferred Date: ${formatNiceDate(selectedDate)}\n`;
+      message += `Preferred Date: ${formatNiceDate(selectedDate)}\n`;
 
       // If time is removed / not selected, keep it flexible
       const timeText =
         selectedTime && selectedTime !== "Any Time" ? selectedTime : "Flexible / Any time";
-      message += `⏰ Preferred Time: ${timeText}\n\n`;
+      message += `Preferred Time: ${timeText}\n\n`;
     }
 
     message += "Please let me know about availability and next steps.\n\nThank you!";
@@ -157,7 +157,8 @@ export default function InquirySection({
         {/* Contact Info */}
         <div className="mt-12 p-6 bg-slate-50 rounded-lg border border-slate-200 text-center">
           <p className="text-slate-600 text-sm">
-            Direct WhatsApp: <span className="font-semibold text-slate-900">{displayWhatsapp}</span>
+            {/*Direct WhatsApp: <span className="font-semibold text-slate-900">{displayWhatsapp}</span>*/}
+            Thank you !
           </p>
         </div>
       </div>

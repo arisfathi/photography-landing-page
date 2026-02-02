@@ -15,7 +15,7 @@ export default function Home() {
   const [selectedDate, setSelectedDate] = useState<string | undefined>();
   const [selectedTime, setSelectedTime] = useState<string | undefined>();
   const [selectedCategory, setSelectedCategory] =
-    useState<PackageCategory>("convocation");
+    useState<PackageCategory | null>(null);
 
   const [settings, setSettings] = useState<SiteSettings | null>(null);
 

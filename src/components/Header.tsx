@@ -29,11 +29,13 @@ export default function Header({ settings }: HeaderProps) {
     <header className="sticky top-0 z-50 bg-white shadow-sm">
       <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-gradient-to-br from-slate-900 to-slate-700 rounded-lg flex items-center justify-center">
-            <div className="w-10 h-10 bg-white rounded-lg border border-slate-200 flex items-center justify-center overflow-hidden">
-            <Image src={logoUrl} alt="Raygraphy logo" width={256} height={256} />
-          </div>
-          </div>
+          <Image
+            src={logoUrl}
+            alt="Raygraphy logo"
+            width={256}
+            height={256}
+            className="h-10 w-10 object-contain"
+          />
           <span className="text-lg sm:text-xl font-bold text-slate-900">
             {brandDomain || brand}
           </span>

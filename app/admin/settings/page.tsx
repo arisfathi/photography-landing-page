@@ -46,6 +46,7 @@ export default function AdminSettingsPage() {
 
   const [message, setMessage] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [logoVersion, setLogoVersion] = useState<string>("");
 
   const [form, setForm] = useState<SettingsForm>(emptyForm);
 
@@ -101,6 +102,7 @@ export default function AdminSettingsPage() {
       hero_subtitle: data.hero_subtitle ?? "",
       hero_tagline: data.hero_tagline ?? "",
     });
+    setLogoVersion(data.updated_at ?? "");
 
     setLoading(false);
   };
@@ -170,6 +172,7 @@ export default function AdminSettingsPage() {
       return;
     }
 
+    setLogoVersion(payload.updated_at);
     setMessage("Saved successfully ✅");
     setSaving(false);
   };
@@ -243,10 +246,27 @@ export default function AdminSettingsPage() {
               {form.logo_url && (
                 <div className="rounded-lg overflow-hidden bg-slate-50 p-4">
                   <img
-                    src={form.logo_url}
+                    src={`${form.logo_url}${logoVersion ? `?v=${encodeURIComponent(logoVersion)}` : ""}`}
                     alt="Logo preview"
                     className="h-20 object-contain"
                   />
+                </div>
+              )}
+              {form.logo_url && (
+                <div className="flex items-center gap-4 rounded-lg border border-slate-200 bg-white p-3">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={`${form.logo_url}${logoVersion ? `?v=${encodeURIComponent(logoVersion)}` : ""}`}
+                      alt="Favicon preview"
+                      className="h-8 w-8 rounded"
+                    />
+                    <div className="text-xs text-slate-600">
+                      Favicon preview (browser tab)
+                    </div>
+                  </div>
+                  <div className="text-xs text-slate-500">
+                    Tip: refresh the browser if the icon looks cached.
+                  </div>
                 </div>
               )}
               <div>

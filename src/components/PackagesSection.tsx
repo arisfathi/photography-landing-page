@@ -21,7 +21,7 @@ type PackageRow = {
 };
 
 interface PackagesSectionProps {
-  selectedCategory: PackageCategory;
+  selectedCategory: PackageCategory | null;
   settings: SiteSettings | null;
 }
 
@@ -34,6 +34,12 @@ export default function PackagesSection({ selectedCategory, settings }: Packages
   const waNumber = settings?.whatsapp_number || ""; // no + sign
 
   useEffect(() => {
+    if (!selectedCategory) {
+      setPackages([]);
+      setError(null);
+      setLoading(false);
+      return;
+    }
     fetchPackages();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategory]);
@@ -48,6 +54,11 @@ export default function PackagesSection({ selectedCategory, settings }: Packages
   const fetchPackages = async () => {
     setLoading(true);
     setError(null);
+    if (!selectedCategory) {
+      setPackages([]);
+      setLoading(false);
+      return;
+    }
 
     const { data, error } = await supabase
       .from("packages")
@@ -83,10 +94,15 @@ export default function PackagesSection({ selectedCategory, settings }: Packages
 
   const buildWhatsAppUrl = () => {
     if (!waNumber) return "#inquiry";
+    const categoryLabel = selectedCategory ? getCategoryLabel(selectedCategory) : "photography";
     const msg = encodeURIComponent(
-      `Hi ${settings?.brand_name || "Raygraphy"}! 👋\n\nI'm interested in your ${getCategoryLabel(
-        selectedCategory
-      )} package.\n\nPlease share availability and pricing details.\n\nThank you!`
+      `Hi ${settings?.brand_name || "Raygraphy"}! ????
+
+I'm interested in your ${categoryLabel} package.
+
+Please share availability and pricing details.
+
+Thank you!`
     );
     return `https://wa.me/${waNumber}?text=${msg}`;
   };
@@ -95,7 +111,7 @@ export default function PackagesSection({ selectedCategory, settings }: Packages
     <section id="packages" className="py-12 px-4 bg-slate-50">
       <div className="max-w-6xl mx-auto">
         <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4 text-center">
-          {getCategoryLabel(selectedCategory)} Packages
+          {selectedCategory ? `${getCategoryLabel(selectedCategory)} Packages` : "Packages"}
         </h2>
 
         <p className="text-slate-700 text-center mb-12 max-w-2xl mx-auto font-medium">
@@ -103,7 +119,12 @@ export default function PackagesSection({ selectedCategory, settings }: Packages
           and delivery of high-resolution digital files.
         </p>
 
-        {loading ? (
+        {!selectedCategory ? (
+          <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+            <p className="text-slate-900 font-bold text-lg">No categories available</p>
+            <p className="mt-2 text-slate-700 font-medium">Please check back later.</p>
+          </div>
+        ) : loading ? (
           <div className="rounded-xl border border-slate-200 bg-white p-6 text-center text-slate-800 font-medium">
             Loading packages...
           </div>
