@@ -137,7 +137,7 @@ export default function PortfolioSection({
     <section id="portfolio" className="py-12 px-4 bg-white">
       <div className="mx-auto max-w-2xl text-center">
         <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-8">
-          Portfolio
+          What service are you looking for ?
         </h2>
 
         {/* Category Buttons (same UI) */}
@@ -165,6 +165,9 @@ export default function PortfolioSection({
             </div>
           </div>
         )}
+        <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-8">
+          Portfolio
+        </h2>
 
         {err && (
           <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-red-800 font-medium text-left">
