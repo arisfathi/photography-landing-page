@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { getSession, isAdmin } from "@/lib/auth";
@@ -102,7 +102,7 @@ export default function AdminPackagesPage() {
         setCategory(list[0].slug);
       }
     })();
-  }, [checking]);
+  }, [checking, category]);
 
   useEffect(() => {
     if (checking) return;
@@ -148,16 +148,19 @@ export default function AdminPackagesPage() {
     });
   }, [packages]);
 
-  const getTypeLabel = (slug: string): string => {
-    const match = types.find((t) => t.slug === slug);
-    if (match) return match.name;
-    return slug.charAt(0).toUpperCase() + slug.slice(1);
-  };
+  const getTypeLabel = useCallback(
+    (slug: string): string => {
+      const match = types.find((t) => t.slug === slug);
+      if (match) return match.name;
+      return slug.charAt(0).toUpperCase() + slug.slice(1);
+    },
+    [types]
+  );
 
   const categoryOptions = useMemo(() => {
     if (types.length > 0) return types.map((t) => ({ slug: t.slug, label: t.name }));
     return [{ slug: category, label: getTypeLabel(category) }];
-  }, [types, category]);
+  }, [types, category, getTypeLabel]);
 
   const openAdd = () => {
     setErr(null);

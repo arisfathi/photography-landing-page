@@ -39,7 +39,7 @@ async function getLogoSettings() {
 export async function generateMetadata(): Promise<Metadata> {
   const { logo_url, favicon_url, updated_at } = await getLogoSettings();
   const fallbackIcon = "/favicon.ico";
-  const version = updated_at ? new Date(updated_at).getTime() : Date.now();
+  const version = updated_at ? new Date(updated_at).getTime() : 0;
   const base = favicon_url ?? logo_url ?? fallbackIcon;
   const iconUrl = `${base}${base.includes("?") ? "&" : "?"}v=${version}`;
 
@@ -60,7 +60,7 @@ export default async function RootLayout({
 }>) {
   const { logo_url, favicon_url, updated_at } = await getLogoSettings();
   const base = favicon_url ?? logo_url ?? "/favicon.ico";
-  const version = updated_at ? new Date(updated_at).getTime() : Date.now();
+  const version = updated_at ? new Date(updated_at).getTime() : 0;
   const faviconHref = `${base}${base.includes("?") ? "&" : "?"}v=${version}`;
 
   return (

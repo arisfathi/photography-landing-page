@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { getSession, signOut } from "@/lib/auth";
 import CalendarIcon from "@remixicons/react/line/CalendarIcon";
 import Box3Icon from "@remixicons/react/line/Box3Icon";
@@ -10,6 +11,7 @@ import ImageIcon from "@remixicons/react/line/ImageIcon";
 import LogoutBoxRIcon from "@remixicons/react/line/LogoutBoxRIcon";
 import SettingsIcon from "@remixicons/react/line/SettingsIcon";
 import StackIcon from "@remixicons/react/line/StackIcon";
+import ArrowRightSIcon from "@remixicons/react/line/ArrowRightSIcon";
 
 interface User {
   email: string;
@@ -74,28 +76,16 @@ export default function AdminPage() {
 
   const navItems = [
     {
-      name: "Settings",
-      href: "/admin/settings",
-      icon: SettingsIcon,
-      description: "Manage site settings",
-    },
-    {
-      name: "Photography Types",
-      href: "/admin/types",
-      icon: StackIcon,
-      description: "Manage photography types",
-    },
-    {
       name: "Availability",
       href: "/admin/availability",
       icon: CalendarIcon,
       description: "Manage availability calendar",
     },
     {
-      name: "Packages",
-      href: "/admin/packages",
-      icon: Box3Icon,
-      description: "Manage service packages",
+      name: "Gallery",
+      href: "/admin/gallery",
+      icon: GalleryUploadIcon,
+      description: "Manage gallery images",
     },
     {
       name: "Portfolio",
@@ -104,10 +94,22 @@ export default function AdminPage() {
       description: "Manage portfolio items",
     },
     {
-      name: "Gallery",
-      href: "/admin/gallery",
-      icon: GalleryUploadIcon,
-      description: "Manage gallery images",
+      name: "Packages",
+      href: "/admin/packages",
+      icon: Box3Icon,
+      description: "Manage service packages",
+    },
+    {
+      name: "Photography Types",
+      href: "/admin/types",
+      icon: StackIcon,
+      description: "Manage photography types",
+    },
+    {
+      name: "Settings",
+      href: "/admin/settings",
+      icon: SettingsIcon,
+      description: "Manage site settings",
     },
   ];
 
@@ -133,31 +135,36 @@ export default function AdminPage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <main className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <h2 className="text-xl font-semibold text-gray-900 mb-6">
             Management Tools
           </h2>
 
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="flex flex-col gap-3">
             {navItems.map((item) => {
               const IconComponent = item.icon;
               return (
-                <a
+                <Link
                   key={item.name}
                   href={item.href}
-                  className="block p-6 bg-white rounded-lg shadow hover:shadow-lg transition-shadow"
+                  className="group flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-900"
                 >
-                  <div className="flex items-center justify-center w-12 h-12 bg-indigo-100 rounded-lg mb-4">
-                    <IconComponent className="h-6 w-6 text-indigo-600 fill-current" />
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-slate-100">
+                      <IconComponent className="h-6 w-6 text-slate-700 fill-current" />
+                    </div>
+                    <div>
+                      <p className="text-base font-semibold text-slate-900">
+                        {item.name}
+                      </p>
+                      <p className="text-sm text-slate-600">
+                        {item.description}
+                      </p>
+                    </div>
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900">
-                    {item.name}
-                  </h3>
-                  <p className="mt-2 text-sm text-gray-600">
-                    {item.description}
-                  </p>
-                </a>
+                  <ArrowRightSIcon className="h-5 w-5 text-slate-400 transition group-hover:text-slate-700 fill-current" />
+                </Link>
               );
             })}
           </div>

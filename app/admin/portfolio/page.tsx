@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+import LightboxModal from "@/components/LightboxModal";
 import { supabase } from "@/lib/supabaseClient";
 import { getSession, isAdmin } from "@/lib/auth";
 import { getPhotographyTypes } from "@/lib/getPhotographyTypes";
@@ -16,6 +18,7 @@ type PhotoRow = {
   title: string;
   alt: string;
   image_url: string;
+  path: string | null;
   sort_order: number;
   is_active: boolean;
   created_at: string;
@@ -44,6 +47,9 @@ export default function AdminPortfolioPage() {
   const [sortOrder, setSortOrder] = useState<number>(0);
   const [isActive, setIsActive] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -85,7 +91,7 @@ export default function AdminPortfolioPage() {
         setCategory(list[0].slug);
       }
     })();
-  }, [checking]);
+  }, [checking, category]);
 
   // Fetch photos when category changes
   useEffect(() => {
@@ -123,16 +129,33 @@ export default function AdminPortfolioPage() {
     });
   }, [photos]);
 
-  const getTypeLabel = (slug: string): string => {
-    const match = types.find((t) => t.slug === slug);
-    if (match) return match.name;
-    return slug.charAt(0).toUpperCase() + slug.slice(1);
-  };
+  const lightboxItems = useMemo(
+    () =>
+      sortedPhotos.map((p) => ({
+        id: p.id,
+        url: p.image_url,
+        path: p.path ?? "",
+        category: p.category,
+        sort_order: p.sort_order,
+        is_active: p.is_active,
+        created_at: p.created_at,
+      })),
+    [sortedPhotos]
+  );
+
+  const getTypeLabel = useCallback(
+    (slug: string): string => {
+      const match = types.find((t) => t.slug === slug);
+      if (match) return match.name;
+      return slug.charAt(0).toUpperCase() + slug.slice(1);
+    },
+    [types]
+  );
 
   const categoryOptions = useMemo(() => {
     if (types.length > 0) return types.map((t) => ({ slug: t.slug, label: t.name }));
     return [{ slug: category, label: getTypeLabel(category) }];
-  }, [types, category]);
+  }, [types, category, getTypeLabel]);
 
   const onUpload = async () => {
     setErr(null);
@@ -176,6 +199,7 @@ export default function AdminPortfolioPage() {
       title: title.trim(),
       alt: alt.trim(),
       image_url: publicUrl,
+      path,
       sort_order: Number.isFinite(sortOrder) ? sortOrder : 0,
       is_active: isActive,
     };
@@ -205,22 +229,78 @@ export default function AdminPortfolioPage() {
     setUploading(false);
   };
 
+  const getPathFromUrl = (bucket: string, url?: string | null): string | null => {
+    if (!url) return null;
+    const marker = `/storage/v1/object/public/${bucket}/`;
+    const idx = url.indexOf(marker);
+    if (idx === -1) return null;
+    return url.slice(idx + marker.length);
+  };
+
   const onDelete = async (row: PhotoRow) => {
-    const ok = confirm(`Delete "${row.title}"? (This removes DB record only)`);
+    const ok = confirm(`Delete "${row.title}" permanently? This cannot be undone.`);
     if (!ok) return;
 
     setErr(null);
     setMsg(null);
+    setDeletingId(row.id);
+
+    const path = row.path || getPathFromUrl("portfolio", row.image_url);
+    if (!path) {
+      setErr("Missing storage path. Cannot delete file.");
+      setDeletingId(null);
+      return;
+    }
+
+    const { error: storageError } = await supabase.storage.from("portfolio").remove([path]);
+    if (storageError) {
+      setErr(storageError.message);
+      setDeletingId(null);
+      return;
+    }
 
     const { error } = await supabase.from("portfolio_photos").delete().eq("id", row.id);
 
     if (error) {
       setErr(error.message);
+      setDeletingId(null);
       return;
     }
 
     setPhotos((prev) => prev.filter((p) => p.id !== row.id));
-    setMsg("Deleted ✅ (file still in Storage)");
+    setMsg("Deleted");
+    setDeletingId(null);
+  };
+
+
+
+  const toggleActive = async (row: PhotoRow) => {
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) {
+      setErr("Please log in.");
+      return;
+    }
+
+    const nextActive = !row.is_active;
+    setTogglingId(row.id);
+    setErr(null);
+    setMsg(null);
+
+    const { error } = await supabase
+      .from("portfolio_photos")
+      .update({ is_active: nextActive })
+      .eq("id", row.id);
+
+    if (error) {
+      setErr(error.message);
+      setTogglingId(null);
+      return;
+    }
+
+    setPhotos((prev) =>
+      prev.map((p) => (p.id === row.id ? { ...p, is_active: nextActive } : p))
+    );
+    setTogglingId(null);
   };
 
   if (checking) {
@@ -308,13 +388,15 @@ export default function AdminPortfolioPage() {
 
               {previewUrl && (
                 <div className="mt-3 rounded-xl border border-slate-200 overflow-hidden bg-slate-50">
-                  <div className="aspect-[4/3]">
-                    <img
-                      src={previewUrl}
-                      alt="Preview"
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
+                <div className="aspect-[4/3] relative">
+                  <Image
+                    src={previewUrl}
+                    alt="Preview"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                  />
+                </div>
                   <div className="p-3 text-sm text-slate-700 font-medium">
                     Preview (before upload)
                   </div>
@@ -404,12 +486,13 @@ export default function AdminPortfolioPage() {
                     key={row.id}
                     className="rounded-xl border border-slate-200 overflow-hidden bg-white"
                   >
-                    <div className="aspect-[4/3] bg-slate-100">
-                      <img
+                    <div className="aspect-[4/3] bg-slate-100 relative">
+                      <Image
                         src={row.image_url}
                         alt={row.alt}
-                        className="h-full w-full object-cover"
-                        loading="lazy"
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 50vw"
                       />
                     </div>
 
@@ -432,19 +515,32 @@ export default function AdminPortfolioPage() {
                       </p>
 
                       <div className="mt-3 flex gap-2">
-                        <a
-                          href={row.image_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <button
+                          onClick={() => {
+                            const idx = lightboxItems.findIndex((p) => p.id === row.id);
+                            if (idx >= 0) setLightboxIndex(idx);
+                          }}
                           className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-900 hover:bg-slate-100 transition text-center"
                         >
                           View
-                        </a>
+                        </button>
+                        <button
+                          onClick={() => toggleActive(row)}
+                          disabled={togglingId === row.id}
+                          className={`flex-1 rounded-lg px-3 py-2 text-sm font-bold transition disabled:opacity-60 ${
+                            row.is_active
+                              ? "bg-green-100 text-green-800 hover:bg-green-200"
+                              : "bg-slate-200 text-slate-800 hover:bg-slate-300"
+                          }`}
+                        >
+                          {togglingId === row.id ? "Saving..." : row.is_active ? "Hide" : "Show"}
+                        </button>
                         <button
                           onClick={() => onDelete(row)}
-                          className="flex-1 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-800 hover:bg-red-100 transition"
+                          disabled={deletingId === row.id}
+                          className="flex-1 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-800 hover:bg-red-100 transition disabled:opacity-60"
                         >
-                          Delete
+                          {deletingId === row.id ? "Deleting..." : "Delete"}
                         </button>
                       </div>
 
@@ -459,6 +555,23 @@ export default function AdminPortfolioPage() {
           </div>
         </div>
       </div>
+      <LightboxModal
+        items={lightboxItems}
+        index={lightboxIndex}
+        onClose={() => setLightboxIndex(null)}
+        onPrev={() =>
+          setLightboxIndex((prev) => {
+            if (prev === null || lightboxItems.length === 0) return prev;
+            return (prev - 1 + lightboxItems.length) % lightboxItems.length;
+          })
+        }
+        onNext={() =>
+          setLightboxIndex((prev) => {
+            if (prev === null || lightboxItems.length === 0) return prev;
+            return (prev + 1) % lightboxItems.length;
+          })
+        }
+      />
     </main>
   );
 }

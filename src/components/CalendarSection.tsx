@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabaseClient";
 
 type SlotStatus = "available" | "booked";
 type ServiceTypeSlug = string;
+type AvailabilitySlot = { time: string; status: SlotStatus };
 
 type AvailabilityRow = {
   id: string;
@@ -129,10 +130,10 @@ export default function CalendarSection({
   };
 
   // For selected date: show ONLY slots that admin created (view-only)
-  const getAvailabilityForDate = (dateStr: string) => {
+  const getAvailabilityForDate = (dateStr: string): { slots: AvailabilitySlot[]; eventType: ServiceTypeSlug | null } => {
     const list = byDate.get(dateStr) ?? [];
 
-    const slots = list
+    const slots: AvailabilitySlot[] = list
       .slice()
       .sort((a, b) => {
         if (a.is_full_day !== b.is_full_day) return a.is_full_day ? -1 : 1;
@@ -264,7 +265,7 @@ export default function CalendarSection({
             {selectedDay && availability ? (
               availability.slots.length > 0 ? (
                 <div className="space-y-2">
-                  {availability.slots.map((slot: any, idx: number) => {
+                  {availability.slots.map((slot: AvailabilitySlot, idx: number) => {
                     const effectiveBooked = selectedDayIsFullBooked || slot.status === "booked";
 
                     return (

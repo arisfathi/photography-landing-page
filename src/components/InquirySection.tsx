@@ -50,14 +50,6 @@ export default function InquirySection({
 
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${buildWhatsAppMessage()}`;
 
-  // For display only (nice formatting). If admin stores +60... we keep it; otherwise show +<number>
-  const displayWhatsapp =
-    settings?.whatsapp_number
-      ? settings.whatsapp_number.startsWith("+")
-        ? settings.whatsapp_number
-        : `+${settings.whatsapp_number}`
-      : "+60123456789";
-
   return (
     <section id="inquiry" className="py-12 px-4 bg-white">
       <div className="max-w-4xl mx-auto">

@@ -26,13 +26,18 @@ export default function LightboxModal({
 
   useEffect(() => {
     if (index === null) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
       if (e.key === "ArrowLeft") onPrev();
       if (e.key === "ArrowRight") onNext();
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
   }, [index, onClose, onNext, onPrev]);
 
   if (!active) return null;
@@ -42,6 +47,7 @@ export default function LightboxModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
       role="dialog"
       aria-modal="true"
+      onClick={onClose}
     >
       <button
         type="button"
@@ -61,7 +67,10 @@ export default function LightboxModal({
         <ArrowLeftSIcon className="h-6 w-6 fill-current" />
       </button>
 
-      <div className="relative w-full max-w-5xl h-[70vh] sm:h-[80vh]">
+      <div
+        className="relative w-full max-w-5xl h-[70vh] sm:h-[80vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
         <Image
           src={active.url}
           alt=""

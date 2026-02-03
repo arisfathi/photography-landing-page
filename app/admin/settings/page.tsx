@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { getSession, isAdmin } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import { uploadToStorage } from "@/lib/storage";
+import Image from "next/image";
 
 type SettingsForm = {
   brand_name: string;
@@ -245,21 +246,29 @@ export default function AdminSettingsPage() {
             <div className="space-y-4">
               {form.logo_url && (
                 <div className="rounded-lg overflow-hidden bg-slate-50 p-4">
-                  <img
-                    src={`${form.logo_url}${logoVersion ? `?v=${encodeURIComponent(logoVersion)}` : ""}`}
-                    alt="Logo preview"
-                    className="h-20 object-contain"
-                  />
+                  <div className="h-20 w-20 relative">
+                      <Image
+                        src={`${form.logo_url}${logoVersion ? `?v=${encodeURIComponent(logoVersion)}` : ""}`}
+                        alt="Logo preview"
+                        fill
+                        className="object-contain"
+                        sizes="80px"
+                      />
+                    </div>
                 </div>
               )}
               {form.logo_url && (
                 <div className="flex items-center gap-4 rounded-lg border border-slate-200 bg-white p-3">
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={`${form.logo_url}${logoVersion ? `?v=${encodeURIComponent(logoVersion)}` : ""}`}
-                      alt="Favicon preview"
-                      className="h-8 w-8 rounded"
-                    />
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 relative rounded overflow-hidden">
+                        <Image
+                          src={`${form.logo_url}${logoVersion ? `?v=${encodeURIComponent(logoVersion)}` : ""}`}
+                          alt="Favicon preview"
+                          fill
+                          className="object-contain"
+                          sizes="32px"
+                        />
+                      </div>
                     <div className="text-xs text-slate-600">
                       Favicon preview (browser tab)
                     </div>
@@ -298,13 +307,17 @@ export default function AdminSettingsPage() {
             <h2 className="text-lg sm:text-xl font-bold text-slate-900 mb-4">Hero Section</h2>
             <div className="space-y-4">
               {form.hero_banner_url && (
-                <div className="rounded-lg overflow-hidden bg-slate-50">
-                  <img
-                    src={form.hero_banner_url}
-                    alt="Banner preview"
-                    className="w-full h-32 sm:h-40 object-cover"
-                  />
-                </div>
+                  <div className="rounded-lg overflow-hidden bg-slate-50">
+                    <div className="w-full h-32 sm:h-40 relative">
+                      <Image
+                        src={form.hero_banner_url}
+                        alt="Banner preview"
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 50vw"
+                      />
+                    </div>
+                  </div>
               )}
               <div>
                 <label className="block text-sm font-bold text-slate-900 mb-2">

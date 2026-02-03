@@ -10,6 +10,14 @@ import type { PhotographyType } from "@/lib/getPhotographyTypes";
 
 type SlotStatus = "available" | "booked";
 type ServiceTypeSlug = string;
+type AvailabilityInsert = {
+  date: string;
+  status: SlotStatus;
+  service_type: ServiceTypeSlug | null;
+  note: string | null;
+  is_full_day: boolean;
+  slot_time: string | null;
+};
 
 type AvailabilityRow = {
   id: string;
@@ -135,11 +143,13 @@ export default function AdminAvailabilityPage() {
       return;
     }
 
-    const payload: any = {
+    const payload: AvailabilityInsert = {
       date: selectedDate,
       status,
       service_type: serviceType || null,
       note: note.trim() || null,
+      is_full_day: false,
+      slot_time: null,
     };
 
     if (type === "full_day") {
@@ -155,7 +165,7 @@ export default function AdminAvailabilityPage() {
     if (error) {
       // 23505 = unique violation in Postgres
       // Supabase often returns it as error.code
-      if ((error as any).code === "23505") {
+      if ("code" in error && error.code === "23505") {
         setErr("This slot already exists for that date.");
         return;
       }
@@ -261,7 +271,7 @@ export default function AdminAvailabilityPage() {
               <label className="mt-3 block text-sm font-bold text-slate-900">Type</label>
               <select
                 value={type}
-                onChange={(e) => setType(e.target.value as any)}
+                onChange={(e) => setType(e.target.value as "time_slot" | "full_day")}
                 className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:ring-2 focus:ring-slate-900"
               >
                 <option value="time_slot">Time slot</option>
@@ -297,7 +307,7 @@ export default function AdminAvailabilityPage() {
               </label>
               <select
                 value={serviceType}
-                onChange={(e) => setServiceType(e.target.value as any)}
+                onChange={(e) => setServiceType(e.target.value as ServiceTypeSlug | "")}
                 className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:ring-2 focus:ring-slate-900"
               >
                 <option value="">(none)</option>
