@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import ArrowLeftSIcon from "@remixicons/react/line/ArrowLeftSIcon";
 import ArrowRightSIcon from "@remixicons/react/line/ArrowRightSIcon";
 import { supabase } from "@/lib/supabaseClient";
+import type { SiteSettings } from "@/lib/getSettings";
+import type { SelectedPackage } from "@/lib/bookingTypes";
 
 type SlotStatus = "available" | "booked";
 type ServiceTypeSlug = string;
@@ -24,6 +26,9 @@ interface CalendarSectionProps {
   onDateSelect: (date: string, time: string) => void; // keep as-is, we pass "Any Time"
   selectedDate?: string;
   selectedTime?: string; // not used anymore, but keep to avoid breaking parent
+  selectedPackage?: SelectedPackage | null;
+  selectedTypeLabel?: string | null;
+  settings: SiteSettings | null;
 }
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -46,6 +51,9 @@ const toHHMM = (t: string) => t.slice(0, 5);
 export default function CalendarSection({
   onDateSelect,
   selectedDate,
+  selectedPackage,
+  selectedTypeLabel,
+  settings,
 }: CalendarSectionProps) {
   const [currentDate, setCurrentDate] = useState(new Date()); // current month
   const [selectedDay, setSelectedDay] = useState<string | null>(selectedDate || null);
@@ -53,11 +61,16 @@ export default function CalendarSection({
   const [rows, setRows] = useState<AvailabilityRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [bookingError, setBookingError] = useState<string | null>(null);
 
   // keep UI synced if parent changes selectedDate
   useEffect(() => {
     if (selectedDate) setSelectedDay(selectedDate);
   }, [selectedDate]);
+
+  useEffect(() => {
+    setBookingError(null);
+  }, [selectedPackage, selectedDate]);
 
   const handlePrevMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
@@ -153,6 +166,11 @@ export default function CalendarSection({
 
   const availability = selectedDay ? getAvailabilityForDate(selectedDay) : null;
   const selectedDayIsFullBooked = selectedDay ? isFullDayBooked(selectedDay) : false;
+  const effectiveDate = selectedDay ?? selectedDate ?? null;
+  const brandName = settings?.brand_name || "Raygraphy";
+  const whatsappDigits = (settings?.whatsapp_number ?? "").replace(/\D/g, "");
+  const contactDigits = (settings?.contact_phone ?? "").replace(/\D/g, "");
+  const phoneDigits = whatsappDigits || contactDigits;
 
   const days: Array<number | null> = [];
   const daysInMonth = getDaysInMonth(currentDate);
@@ -163,15 +181,62 @@ export default function CalendarSection({
 
   const monthName = monthLabel(currentDate);
 
+  const formatNiceDate = (iso: string) => {
+    const safeDate = new Date(`${iso}T00:00:00`);
+    return safeDate.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  const buildWhatsAppMessage = () => {
+    if (!selectedPackage || !effectiveDate) return "";
+    const lines = [
+      `Hi ${brandName}!`,
+      "",
+      "I'd like to book a session with these details:",
+      `Type: ${selectedTypeLabel || "Photography"}`,
+      `Package: ${selectedPackage.name}`,      
+      `Date: ${formatNiceDate(effectiveDate)}`,
+      "Time : ",
+      "Pax : ",
+      "",
+      "Please confirm availability. Thank you!",
+    ].filter(Boolean);
+
+    return encodeURIComponent(lines.join("\n"));
+  };
+
+  const handleBookNow = () => {
+    if (!selectedPackage || !effectiveDate) return;
+    if (!phoneDigits) {
+      setBookingError("WhatsApp number is not configured. Please use the inquiry section below.");
+      const inquiryEl = document.getElementById("inquiry");
+      if (inquiryEl) inquiryEl.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+
+    const url = `https://wa.me/${phoneDigits}?text=${buildWhatsAppMessage()}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const canBook = Boolean(selectedPackage && effectiveDate);
+
   return (
     <section
       id="calendar"
       className="py-10 sm:py-12 px-3 sm:px-4 bg-slate-50 overflow-x-hidden"
     >
       <div className="max-w-6xl mx-auto">
-        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-6 sm:mb-8 text-center">
+        <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4 text-center">
           Check Availability
         </h2>
+        
+        <p className="text-slate-700 text-center mb-12 max-w-2xl mx-auto font-medium">
+          Select a date to check availability and confirm your booking details.
+        </p>
 
         {err && (
           <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-red-800 font-medium">
@@ -283,7 +348,7 @@ export default function CalendarSection({
                         <div className="flex items-center justify-between">
                           <span>{slot.time}</span>
                           <span className="text-xs font-semibold">
-                            {!effectiveBooked ? "✓ Available" : "✗ Booked"}
+                            {!effectiveBooked ? "Available" : "Booked"}
                           </span>
                         </div>
                       </div>
@@ -292,17 +357,82 @@ export default function CalendarSection({
                 </div>
               ) : (
                 <p className="text-slate-500 text-sm">
-                  No slots for this date yet. (You can still proceed — date selection already sends WhatsApp.)
-                </p>
+                  No slots for this date yet. You can still proceed with booking using the selected date.</p>
               )
             ) : (
               <p className="text-slate-500 text-sm">
-                Dates are available by default. Red means fully booked.
+                Green = available. Red = fully booked.
               </p>
             )}
+
+            {/* Booking Summary */}
+            <div className="mt-6 border-t border-slate-200 pt-6">
+              <h4 className="text-base sm:text-lg font-semibold text-slate-900 mb-3">
+                Booking Summary
+              </h4>
+
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-slate-500">Category</span>
+                    <span className="font-semibold text-slate-900 text-right">
+                      {selectedTypeLabel || "Select a package"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-slate-500">Package</span>
+                    <span className="font-semibold text-slate-900 text-right">
+                      {selectedPackage?.name || "Select a package"}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-slate-500">Date</span>
+                    <span className="font-semibold text-slate-900 text-right">
+                      {effectiveDate ? formatNiceDate(effectiveDate) : "Pick a date"}
+                    </span>
+                  </div>
+                </div>
+
+                {selectedPackage?.features.length ? (
+                  <div className="mt-3">
+                    <p className="text-xs text-slate-500 font-semibold mb-2">Key features</p>
+                    <ul className="space-y-1 text-xs text-slate-700">
+                      {selectedPackage.features.map((feature, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <span className="mt-2 h-1.5 w-1.5 rounded-full bg-slate-400" />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+
+                {bookingError && (
+                  <div className="mt-3 rounded-md border border-red-200 bg-red-50 p-2 text-xs text-red-700">
+                    {bookingError}
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleBookNow}
+                disabled={!canBook}
+                className={`mt-4 w-full rounded-lg px-4 py-3 text-sm font-bold transition ${
+                  canBook
+                    ? "bg-slate-900 text-white hover:bg-slate-800"
+                    : "bg-slate-200 text-slate-500 cursor-not-allowed"
+                }`}
+              >
+                Book now
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </section>
   );
 }
+
+

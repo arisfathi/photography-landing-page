@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabaseClient";
 import type { PackageCategory } from "@/lib/types";
 import { getPhotographyTypes } from "@/lib/getPhotographyTypes";
 import type { PhotographyType } from "@/lib/getPhotographyTypes";
+import type { SelectedPackage } from "@/lib/bookingTypes";
 
 type PackageRow = {
   id: string;
@@ -23,15 +24,24 @@ type PackageRow = {
 interface PackagesSectionProps {
   selectedCategory: PackageCategory | null;
   settings: SiteSettings | null;
+  onSelectPackage: (data: {
+    category: PackageCategory;
+    categoryLabel: string;
+    pkg: SelectedPackage;
+  }) => void;
 }
 
-export default function PackagesSection({ selectedCategory, settings }: PackagesSectionProps) {
+export default function PackagesSection({
+  selectedCategory,
+  settings,
+  onSelectPackage,
+}: PackagesSectionProps) {
   const [loading, setLoading] = useState(false);
   const [packages, setPackages] = useState<PackageRow[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [types, setTypes] = useState<PhotographyType[]>([]);
 
-  const waNumber = settings?.whatsapp_number || ""; // no + sign
+  const waNumber = settings?.contact_phone || settings?.whatsapp_number || ""; // no + sign
 
   useEffect(() => {
     if (!selectedCategory) {
@@ -93,10 +103,11 @@ export default function PackagesSection({ selectedCategory, settings }: Packages
   }, [packages]);
 
   const buildWhatsAppUrl = () => {
-    if (!waNumber) return "#inquiry";
+    const digits = waNumber.replace(/\D/g, "");
+    if (!digits) return "#inquiry";
     const categoryLabel = selectedCategory ? getCategoryLabel(selectedCategory) : "photography";
     const msg = encodeURIComponent(
-      `Hi ${settings?.brand_name || "Raygraphy"}! ????
+      `Hi ${settings?.brand_name || "Raygraphy"}!
 
 I'm interested in your ${categoryLabel} package.
 
@@ -104,7 +115,28 @@ Please share availability and pricing details.
 
 Thank you!`
     );
-    return `https://wa.me/${waNumber}?text=${msg}`;
+    return `https://wa.me/${digits}?text=${msg}`;
+  };
+
+  const handleSelectPackage = (pkg: PackageRow) => {
+    if (!selectedCategory) return;
+    onSelectPackage({
+      category: selectedCategory,
+      categoryLabel: getCategoryLabel(selectedCategory),
+      pkg: {
+        id: pkg.id,
+        category: selectedCategory,
+        name: pkg.name,
+        price: pkg.price,
+        description: pkg.description,
+        features: pkg.features ?? [],
+      },
+    });
+
+    const el = document.getElementById("calendar");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   };
 
   return (
@@ -115,8 +147,7 @@ Thank you!`
         </h2>
 
         <p className="text-slate-700 text-center mb-12 max-w-2xl mx-auto font-medium">
-          Choose the package that best fits your needs. All packages include professional editing
-          and delivery of high-resolution digital files.
+          Choose the package that best fits your needs. Final quotation will be provided after discussion.
         </p>
 
         {!selectedCategory ? (
@@ -145,19 +176,19 @@ Thank you!`
               rel={waNumber ? "noopener noreferrer" : undefined}
               className="inline-block mt-6 rounded-lg bg-slate-900 px-6 py-3 text-white font-bold hover:bg-slate-800 transition"
             >
-              {waNumber ? "Contact on WhatsApp" : "Set WhatsApp in Settings"}
+              {waNumber ? "Contact on WhatsApp" : "Set Contact Phone in Settings"}
             </a>
           </div>
         ) : (
           <div
             className={`grid ${
               sorted.length === 1 ? "md:grid-cols-1" : sorted.length === 2 ? "md:grid-cols-2" : "md:grid-cols-3"
-            } gap-6 lg:gap-8`}
+            } gap-6 lg:gap-8 items-stretch`}
           >
             {sorted.map((pkg) => (
               <div
                 key={pkg.id}
-                className={`rounded-lg shadow-md overflow-hidden transition transform hover:-translate-y-1 hover:shadow-xl ${
+                className={`h-full flex flex-col rounded-lg shadow-md overflow-hidden transition transform hover:-translate-y-1 hover:shadow-xl ${
                   pkg.highlighted ? "md:scale-105 bg-slate-900 text-white md:shadow-lg" : "bg-white"
                 }`}
               >
@@ -174,41 +205,44 @@ Thank you!`
                   </p>
                 </div>
 
-                <div className={`p-6 ${pkg.highlighted ? "bg-slate-800" : "bg-white"}`}>
-                  <div className="mb-6">
-                    <span className={`text-3xl font-bold ${pkg.highlighted ? "text-white" : "text-slate-900"}`}>
-                      {pkg.price}
-                    </span>
-                    <p className={`text-sm font-medium ${pkg.highlighted ? "text-slate-200" : "text-slate-700"}`}>
-                      per session
-                    </p>
+                <div className={`p-6 flex-1 flex flex-col ${pkg.highlighted ? "bg-slate-800" : "bg-white"}`}>
+                  <div className="flex-1">
+                    <div className="mb-6">
+                      <p className={`text-sm font-medium ${pkg.highlighted ? "text-slate-200" : "text-slate-700"}`}>
+                        from
+                      </p>
+                      <span className={`text-3xl font-bold ${pkg.highlighted ? "text-white" : "text-slate-900"}`}>
+                        {pkg.price}
+                      </span>
+                    </div>
+
+                    <ul className="space-y-3">
+                      {(pkg.features ?? []).map((feature, idx) => (
+                        <li key={idx} className="flex items-start gap-3">
+                          <span className={`${pkg.highlighted ? "text-green-300" : "text-green-600"} font-bold mt-1`}>
+                            ✓
+                          </span>
+                          <span className={`text-sm font-medium ${pkg.highlighted ? "text-slate-100" : "text-slate-800"}`}>
+                            {feature}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
 
-                  <ul className="space-y-3 mb-6">
-                    {(pkg.features ?? []).map((feature, idx) => (
-                      <li key={idx} className="flex items-start gap-3">
-                        <span className={`${pkg.highlighted ? "text-green-300" : "text-green-600"} font-bold mt-1`}>
-                          ✓
-                        </span>
-                        <span className={`text-sm font-medium ${pkg.highlighted ? "text-slate-100" : "text-slate-800"}`}>
-                          {feature}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <a
-                    href={waNumber ? buildWhatsAppUrl() : "#inquiry"}
-                    target={waNumber ? "_blank" : undefined}
-                    rel={waNumber ? "noopener noreferrer" : undefined}
-                    className={`block w-full text-center py-3 rounded-lg font-bold transition text-sm ${
-                      pkg.highlighted
-                        ? "bg-white text-slate-900 hover:bg-slate-100"
-                        : "bg-slate-900 text-white hover:bg-slate-800"
-                    }`}
-                  >
-                    Book / Ask on WhatsApp
-                  </a>
+                  <div className="mt-auto pt-4">
+                    <button
+                      type="button"
+                      onClick={() => handleSelectPackage(pkg)}
+                      className={`block w-full text-center py-3 rounded-lg font-bold transition text-sm ${
+                        pkg.highlighted
+                          ? "bg-white text-slate-900 hover:bg-slate-100"
+                          : "bg-slate-900 text-white hover:bg-slate-800"
+                      }`}
+                    >
+                      Select Date
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -218,3 +252,7 @@ Thank you!`
     </section>
   );
 }
+
+
+
+

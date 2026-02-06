@@ -238,6 +238,13 @@ export default function PortfolioSection({
           </div>
         )}
 
+        {/* Mobile Swipe Hint */}
+        {categories.length > 0 && (
+          <p className="text-center text-slate-500 text-sm mt-4 lg:hidden">
+            Swipe to see more
+          </p>
+        )}
+
         {/* CTA */}
         <div className="mt-8 flex justify-center">
           <Link
@@ -249,12 +256,6 @@ export default function PortfolioSection({
           </Link>
         </div>
 
-        {/* Mobile Swipe Hint */}
-        {categories.length > 0 && (
-          <p className="text-center text-slate-500 text-sm mt-4 lg:hidden">
-            Swipe to see more
-          </p>
-        )}
       </div>
     </section>
   );

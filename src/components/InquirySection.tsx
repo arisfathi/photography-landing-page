@@ -7,86 +7,61 @@ import WhatsappIcon from "@remixicons/react/line/WhatsappIcon";
 import type { SiteSettings } from "@/lib/getSettings";
 
 interface InquirySectionProps {
-  selectedDate?: string;
-  selectedTime?: string; // optional; if not provided, we'll send "Flexible/Any time"
   settings: SiteSettings | null;
 }
 
-export default function InquirySection({
-  selectedDate,
-  selectedTime,
-  settings,
-}: InquirySectionProps) {
-  const whatsappNumber = settings?.whatsapp_number ?? "60123456789"; // wa.me needs no '+'
+export default function InquirySection({ settings }: InquirySectionProps) {
   const instagramUrl = settings?.instagram_url ?? "https://instagram.com/yourhandle";
   const facebookUrl = settings?.facebook_url ?? "https://facebook.com/yourpage";
   const tiktokUrl = settings?.tiktok_url ?? "https://tiktok.com/@yourhandle";
 
-  const formatNiceDate = (iso: string) =>
-    new Date(iso).toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-
-  const buildWhatsAppMessage = () => {
-    let message = "Hi Raygraphy!\n\n";
-    message += "I'm interested in your photography services.\n\n";
-
-    // DATE-only (time optional)
-    if (selectedDate) {
-      message += `Preferred Date: ${formatNiceDate(selectedDate)}\n`;
-
-      // If time is removed / not selected, keep it flexible
-      const timeText =
-        selectedTime && selectedTime !== "Any Time" ? selectedTime : "Flexible / Any time";
-      message += `Preferred Time: ${timeText}\n\n`;
-    }
-
-    message += "Please let me know about availability and next steps.\n\nThank you!";
-    return encodeURIComponent(message);
-  };
-
-  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${buildWhatsAppMessage()}`;
+  const whatsappDigits = (settings?.whatsapp_number ?? "").replace(/\D/g, "");
+  const whatsappMessage = encodeURIComponent(
+    `Hi ${settings?.brand_name || "Raygraphy"}! I have a question about your photography services.`
+  );
+  const whatsappUrl = whatsappDigits
+    ? `https://wa.me/${whatsappDigits}?text=${whatsappMessage}`
+    : "#";
 
   return (
     <section id="inquiry" className="py-12 px-4 bg-white">
       <div className="max-w-4xl mx-auto">
         <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4 text-center">
-          Ready to Book?
+          Stay Connected
         </h2>
         <p className="text-slate-600 text-center mb-12 max-w-2xl mx-auto">
-          Have questions or want to schedule your session? Reach out to us on WhatsApp or follow
-          us on social media for updates and inspiration.
+          Follow us on social media for updates, behind-the-scenes moments, and new releases.
         </p>
 
         <div className="grid md:grid-cols-4 gap-6">
-          {/* WhatsApp CTA */}
+          {/* WhatsApp */}
           <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-8 text-center border border-green-200 flex flex-col">
             <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
               <WhatsappIcon className="h-8 w-8 text-white fill-current" />
             </div>
             <h3 className="text-xl font-bold text-slate-900 mb-2">WhatsApp</h3>
             <p className="text-slate-600 text-sm mb-4">
-              Quick response & instant booking confirmation
+              Ask a question or request a custom quote.
             </p>
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-auto inline-block bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition text-sm"
-            >
-              Message us
-            </a>
+            {whatsappDigits ? (
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-auto inline-block bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition text-sm"
+              >
+                Message us
+              </a>
+            ) : (
+              <span className="mt-auto inline-block bg-green-200 text-green-900 px-6 py-3 rounded-lg font-semibold text-sm cursor-not-allowed">
+                Message us
+              </span>
+            )}
 
-            {/* Changed: show this when a date is selected (time is optional) */}
-            {selectedDate && (
-              <div className="mt-4 p-3 bg-white rounded-lg border border-green-200 text-left">
-                <p className="text-xs text-green-700 font-semibold">
-                  ✓ Your preferred date is included in the message
-                </p>
-              </div>
+            {!whatsappDigits && (
+              <p className="mt-3 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+                WhatsApp number not configured in Admin Settings.
+              </p>
             )}
           </div>
 
@@ -97,7 +72,7 @@ export default function InquirySection({
             </div>
             <h3 className="text-xl font-bold text-slate-900 mb-2">Instagram</h3>
             <p className="text-slate-600 text-sm mb-4">
-              See our latest portfolio & behind-the-scenes
+              See our latest portfolio and behind-the-scenes
             </p>
             <a
               href={instagramUrl}
@@ -115,7 +90,7 @@ export default function InquirySection({
               <TiktokIcon className="h-8 w-8 text-white fill-current" />
             </div>
             <h3 className="text-xl font-bold text-slate-900 mb-2">TikTok</h3>
-            <p className="text-slate-600 text-sm mb-4">Watch our creative video content & reels</p>
+            <p className="text-slate-600 text-sm mb-4">Watch our creative video content and reels</p>
             <a
               href={tiktokUrl}
               target="_blank"
@@ -148,10 +123,7 @@ export default function InquirySection({
 
         {/* Contact Info */}
         <div className="mt-12 p-6 bg-slate-50 rounded-lg border border-slate-200 text-center">
-          <p className="text-slate-600 text-sm">
-            {/*Direct WhatsApp: <span className="font-semibold text-slate-900">{displayWhatsapp}</span>*/}
-            Thank you !
-          </p>
+          <p className="text-slate-600 text-sm">Thank you!</p>
         </div>
       </div>
     </section>

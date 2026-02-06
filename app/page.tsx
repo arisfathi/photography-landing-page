@@ -10,12 +10,15 @@ import PackagesSection from "@/components/PackagesSection";
 import InquirySection from "@/components/InquirySection";
 import type { SiteSettings } from "@/lib/getSettings";
 import { getSiteSettings } from "@/lib/getSettings";
+import type { SelectedPackage } from "@/lib/bookingTypes";
 
 export default function Home() {
   const [selectedDate, setSelectedDate] = useState<string | undefined>();
   const [selectedTime, setSelectedTime] = useState<string | undefined>();
   const [selectedCategory, setSelectedCategory] =
     useState<PackageCategory | null>(null);
+  const [selectedPackage, setSelectedPackage] = useState<SelectedPackage | null>(null);
+  const [selectedTypeLabel, setSelectedTypeLabel] = useState<string | null>(null);
 
   const [settings, setSettings] = useState<SiteSettings | null>(null);
 
@@ -44,6 +47,11 @@ export default function Home() {
     return () => window.removeEventListener("hashchange", scrollToHash);
   }, []);
 
+  useEffect(() => {
+    setSelectedPackage(null);
+    setSelectedTypeLabel(null);
+  }, [selectedCategory]);
+
   const handleDateSelect = (date: string, time: string) => {
     setSelectedDate(date);
     setSelectedTime(time);
@@ -60,22 +68,25 @@ export default function Home() {
         onCategoryChange={setSelectedCategory}
       />
 
-      <PackagesSection 
-        selectedCategory={selectedCategory} 
-        settings={settings} 
+      <PackagesSection
+        selectedCategory={selectedCategory}
+        settings={settings}
+        onSelectPackage={({ categoryLabel, pkg }) => {
+          setSelectedTypeLabel(categoryLabel);
+          setSelectedPackage(pkg);
+        }}
       />
 
       <CalendarSection
         onDateSelect={handleDateSelect}
         selectedDate={selectedDate}
         selectedTime={selectedTime}
-      />
-      
-      <InquirySection
-        selectedDate={selectedDate}
-        selectedTime={selectedTime}
+        selectedPackage={selectedPackage}
+        selectedTypeLabel={selectedTypeLabel}
         settings={settings}
       />
+      
+      <InquirySection settings={settings} />
 
       <footer className="bg-slate-900 text-slate-300 py-8 px-4">
         <div className="max-w-6xl mx-auto text-center text-sm">
