@@ -157,7 +157,7 @@ export async function generateMetadata(): Promise<Metadata> {
       },
     },
     verification: {
-      google: googleSiteVerification,
+      google: process.env.GOOGLE_SITE_VERIFICATION,
     },
     other: {
       "geo.region": "MY-14",
