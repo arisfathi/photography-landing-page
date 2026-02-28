@@ -1,68 +1,77 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import ArrowLeftSIcon from "@remixicons/react/line/ArrowLeftSIcon";
+import ArrowRightSIcon from "@remixicons/react/line/ArrowRightSIcon";
 import { supabase } from "@/lib/supabaseClient";
 import { getSession, isAdmin } from "@/lib/auth";
-import { getPhotographyTypes } from "@/lib/getPhotographyTypes";
-import type { PhotographyType } from "@/lib/getPhotographyTypes";
 
-
-type SlotStatus = "available" | "booked";
-type ServiceTypeSlug = string;
-type AvailabilityInsert = {
-  date: string;
-  status: SlotStatus;
-  service_type: ServiceTypeSlug | null;
-  note: string | null;
-  is_full_day: boolean;
-  slot_time: string | null;
-};
-
-type AvailabilityRow = {
+type BookedDayRow = {
   id: string;
   date: string; // YYYY-MM-DD
-  slot_time: string | null; // HH:MM:SS or null
-  is_full_day: boolean;
-  service_type: ServiceTypeSlug | null;
-  status: SlotStatus;
   note: string | null;
-  created_at: string;
+  updated_at: string;
 };
 
-function todayISO(): string {
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
-}
+const pad2 = (n: number) => String(n).padStart(2, "0");
 
-function toHHMM(t: string) {
-  return t.slice(0, 5);
-}
+const formatDate = (year: number, month: number, day: number): string =>
+  `${year}-${pad2(month + 1)}-${pad2(day)}`;
+
+const monthKeyFromDate = (date: Date): string =>
+  `${date.getFullYear()}-${pad2(date.getMonth() + 1)}`;
+
+const monthKeyFromIso = (iso: string): string => iso.slice(0, 7);
+
+const monthLabel = (date: Date) =>
+  date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+
+const getDaysInMonth = (date: Date) =>
+  new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+
+const getFirstDayOfMonth = (date: Date) =>
+  new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+
+const toSortedUnique = (dates: string[]) => Array.from(new Set(dates)).sort();
+
+const replaceMonthDates = (
+  prev: string[],
+  key: string,
+  incoming: string[]
+): string[] => {
+  const kept = prev.filter((d) => monthKeyFromIso(d) !== key);
+  return toSortedUnique([...kept, ...incoming]);
+};
+
+const arraysEqual = (a: string[], b: string[]) => {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+};
 
 export default function AdminAvailabilityPage() {
   const router = useRouter();
+  const loadedMonthKeysRef = useRef<Set<string>>(new Set());
 
   const [checking, setChecking] = useState(true);
+  const [currentDate, setCurrentDate] = useState(
+    () => new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+  );
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
-  const [selectedDate, setSelectedDate] = useState<string>(todayISO());
-  const [slots, setSlots] = useState<AvailabilityRow[]>([]);
+  const [serverBookedDates, setServerBookedDates] = useState<string[]>([]);
+  const [localBookedDates, setLocalBookedDates] = useState<string[]>([]);
+
   const [loading, setLoading] = useState(false);
-  const [types, setTypes] = useState<PhotographyType[]>([]);
-
-  // Add form state
-  const [type, setType] = useState<"time_slot" | "full_day">("time_slot");
-  const [time, setTime] = useState<string>("10:00");
-  const [status, setStatus] = useState<SlotStatus>("available");
-  const [serviceType, setServiceType] = useState<ServiceTypeSlug | "">("");
-  const [note, setNote] = useState<string>("");
-
+  const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
-  // Protect page
+  const monthKey = monthKeyFromDate(currentDate);
+
   useEffect(() => {
     (async () => {
       const session = await getSession();
@@ -83,33 +92,31 @@ export default function AdminAvailabilityPage() {
     })();
   }, [router]);
 
-  // Fetch slots whenever date changes
   useEffect(() => {
     if (checking) return;
-    fetchSlots();
+    fetchMonth();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, checking]);
+  }, [checking, currentDate.getFullYear(), currentDate.getMonth()]);
 
-  useEffect(() => {
-    if (checking) return;
-    (async () => {
-      const list = await getPhotographyTypes();
-      setTypes(list);
-    })();
-  }, [checking]);
-
-  const fetchSlots = async () => {
+  const fetchMonth = async (options?: { forceSyncLocalForMonth?: boolean }) => {
     setLoading(true);
     setErr(null);
     setMsg(null);
 
+    const from = formatDate(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const to = formatDate(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      getDaysInMonth(currentDate)
+    );
+    const targetMonthKey = monthKeyFromDate(currentDate);
+
     const { data, error } = await supabase
-      .from("availability_slots")
-      .select("*")
-      .eq("date", selectedDate)
-      .order("is_full_day", { ascending: false })
-      .order("slot_time", { ascending: true })
-      .order("created_at", { ascending: true });
+      .from("booked_days")
+      .select("id, date, note, updated_at")
+      .gte("date", from)
+      .lte("date", to)
+      .order("date", { ascending: true });
 
     if (error) {
       setErr(error.message);
@@ -117,120 +124,129 @@ export default function AdminAvailabilityPage() {
       return;
     }
 
-    setSlots((data as AvailabilityRow[]) ?? []);
+    const monthDates = ((data as BookedDayRow[]) ?? []).map((row) => row.date);
+    setServerBookedDates((prev) => replaceMonthDates(prev, targetMonthKey, monthDates));
+
+    const monthLoaded = loadedMonthKeysRef.current.has(targetMonthKey);
+    if (!monthLoaded || options?.forceSyncLocalForMonth) {
+      setLocalBookedDates((prev) =>
+        replaceMonthDates(prev, targetMonthKey, monthDates)
+      );
+    }
+    loadedMonthKeysRef.current.add(targetMonthKey);
     setLoading(false);
   };
 
-  const sortedSlots = useMemo(() => {
-    return [...slots].sort((a, b) => {
-      if (a.is_full_day !== b.is_full_day) return a.is_full_day ? -1 : 1;
-      const ta = a.slot_time ?? "";
-      const tb = b.slot_time ?? "";
-      return ta.localeCompare(tb);
-    });
-  }, [slots]);
+  const localBookedSet = useMemo(() => new Set(localBookedDates), [localBookedDates]);
+  const serverBookedSet = useMemo(() => new Set(serverBookedDates), [serverBookedDates]);
+  const isDirty = useMemo(
+    () => !arraysEqual(localBookedDates, serverBookedDates),
+    [localBookedDates, serverBookedDates]
+  );
 
-  const typeLabelMap = useMemo(() => {
-    return new Map(types.map((t) => [t.slug, t.name]));
-  }, [types]);
+  const monthBookedCount = useMemo(
+    () => localBookedDates.filter((d) => monthKeyFromIso(d) === monthKey).length,
+    [localBookedDates, monthKey]
+  );
 
-  const onAddSlot = async () => {
+  const handlePrevMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+    setSelectedDay(null);
+  };
+
+  const handleNextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+    setSelectedDay(null);
+  };
+
+  const handleToggleDate = (day: number) => {
+    const dateStr = formatDate(currentDate.getFullYear(), currentDate.getMonth(), day);
+    setSelectedDay(dateStr);
     setErr(null);
     setMsg(null);
 
-    if (!selectedDate) {
-      setErr("Please select a date.");
+    setLocalBookedDates((prev) => {
+      if (prev.includes(dateStr)) return prev.filter((d) => d !== dateStr);
+      return toSortedUnique([...prev, dateStr]);
+    });
+  };
+
+  const handleSaveChanges = async () => {
+    setSaving(true);
+    setErr(null);
+    setMsg(null);
+
+    const added = localBookedDates.filter((d) => !serverBookedSet.has(d));
+    const removed = serverBookedDates.filter((d) => !localBookedSet.has(d));
+
+    if (added.length === 0 && removed.length === 0) {
+      setMsg("No changes to save.");
+      setSaving(false);
       return;
     }
 
-    const payload: AvailabilityInsert = {
-      date: selectedDate,
-      status,
-      service_type: serviceType || null,
-      note: note.trim() || null,
-      is_full_day: false,
-      slot_time: null,
-    };
+    if (added.length > 0) {
+      const now = new Date().toISOString();
+      const payload = added.map((date) => ({
+        date,
+        note: null as string | null,
+        updated_at: now,
+      }));
+      const { error } = await supabase
+        .from("booked_days")
+        .upsert(payload, { onConflict: "date" });
 
-    if (type === "full_day") {
-      payload.is_full_day = true;
-      payload.slot_time = null;
-    } else {
-      payload.is_full_day = false;
-      payload.slot_time = time; // "HH:MM" is fine
-    }
-
-    const { error } = await supabase.from("availability_slots").insert(payload);
-
-    if (error) {
-      // 23505 = unique violation in Postgres
-      // Supabase often returns it as error.code
-      if ("code" in error && error.code === "23505") {
-        setErr("This slot already exists for that date.");
+      if (error) {
+        setErr(error.message);
+        setSaving(false);
         return;
       }
-      setErr(error.message);
-      return;
     }
 
-    setMsg("Slot added ✅");
-    setNote("");
-    await fetchSlots();
+    if (removed.length > 0) {
+      const { error } = await supabase.from("booked_days").delete().in("date", removed);
+      if (error) {
+        setErr(error.message);
+        setSaving(false);
+        return;
+      }
+    }
+
+    setServerBookedDates(localBookedDates);
+    setMsg("Availability updated successfully.");
+    setSaving(false);
   };
 
-  const toggleStatus = async (row: AvailabilityRow) => {
+  const handleDiscardMonthChanges = () => {
     setErr(null);
     setMsg(null);
-
-    const newStatus: SlotStatus = row.status === "available" ? "booked" : "available";
-
-    const { error } = await supabase
-      .from("availability_slots")
-      .update({ status: newStatus })
-      .eq("id", row.id);
-
-    if (error) {
-      setErr(error.message);
-      return;
-    }
-
-    setSlots((prev) => prev.map((s) => (s.id === row.id ? { ...s, status: newStatus } : s)));
+    fetchMonth({ forceSyncLocalForMonth: true });
   };
 
-  const deleteSlot = async (row: AvailabilityRow) => {
-    const ok = confirm("Delete this slot?");
-    if (!ok) return;
-
-    setErr(null);
-    setMsg(null);
-
-    const { error } = await supabase.from("availability_slots").delete().eq("id", row.id);
-
-    if (error) {
-      setErr(error.message);
-      return;
-    }
-
-    setSlots((prev) => prev.filter((s) => s.id !== row.id));
-    setMsg("Deleted ✅");
-  };
+  const days: Array<number | null> = [];
+  const daysInMonth = getDaysInMonth(currentDate);
+  const firstDay = getFirstDayOfMonth(currentDate);
+  for (let i = 0; i < firstDay; i += 1) days.push(null);
+  for (let i = 1; i <= daysInMonth; i += 1) days.push(i);
 
   if (checking) {
     return (
       <main className="min-h-screen bg-slate-50 px-4 py-10">
-        <div className="mx-auto max-w-5xl text-slate-800 font-medium">Checking admin access...</div>
+        <div className="mx-auto max-w-6xl text-slate-800 font-medium">
+          Checking admin access...
+        </div>
       </main>
     );
   }
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-10">
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto max-w-6xl">
         <div className="flex items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Availability</h1>
             <p className="text-sm text-slate-700 mt-1">
-              Add time slots or full-day availability, then mark booked when taken.
+              Default is available for all dates. Click a day to mark it booked.
             </p>
           </div>
 
@@ -242,9 +258,25 @@ export default function AdminAvailabilityPage() {
           </button>
         </div>
 
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+              isDirty
+                ? "bg-amber-100 text-amber-800 border border-amber-200"
+                : "bg-green-100 text-green-800 border border-green-200"
+            }`}
+          >
+            {isDirty ? "Unsaved changes" : "All changes saved"}
+          </span>
+
+          <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
+            Booked days this month: {monthBookedCount}
+          </span>
+        </div>
+
         {(msg || err) && (
           <div
-            className={`mt-6 rounded-lg border p-3 text-sm font-medium ${
+            className={`mt-5 rounded-lg border p-3 text-sm font-medium ${
               err
                 ? "border-red-200 bg-red-50 text-red-800"
                 : "border-green-200 bg-green-50 text-green-800"
@@ -254,161 +286,125 @@ export default function AdminAvailabilityPage() {
           </div>
         )}
 
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
-          {/* Left panel */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:col-span-1">
-            <label className="block text-sm font-bold text-slate-900">Select Date</label>
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:ring-2 focus:ring-slate-900"
-            />
-
-            <div className="mt-6">
-              <h2 className="text-sm font-bold text-slate-900">Add Slot</h2>
-
-              <label className="mt-3 block text-sm font-bold text-slate-900">Type</label>
-              <select
-                value={type}
-                onChange={(e) => setType(e.target.value as "time_slot" | "full_day")}
-                className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:ring-2 focus:ring-slate-900"
-              >
-                <option value="time_slot">Time slot</option>
-                <option value="full_day">Full day</option>
-              </select>
-
-              {type === "time_slot" && (
-                <>
-                  <label className="mt-4 block text-sm font-bold text-slate-900">
-                    Time (exact)
-                  </label>
-                  <input
-                    type="time"
-                    value={time}
-                    onChange={(e) => setTime(e.target.value)}
-                    className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:ring-2 focus:ring-slate-900"
-                  />
-                </>
-              )}
-
-              <label className="mt-4 block text-sm font-bold text-slate-900">Status</label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value as SlotStatus)}
-                className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:ring-2 focus:ring-slate-900"
-              >
-                <option value="available">Available</option>
-                <option value="booked">Booked</option>
-              </select>
-
-              <label className="mt-4 block text-sm font-bold text-slate-900">
-                Service type (optional)
-              </label>
-              <select
-                value={serviceType}
-                onChange={(e) => setServiceType(e.target.value as ServiceTypeSlug | "")}
-                className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:ring-2 focus:ring-slate-900"
-              >
-                <option value="">(none)</option>
-                {types.map((t) => (
-                  <option key={t.id} value={t.slug}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
-
-              <label className="mt-4 block text-sm font-bold text-slate-900">
-                Note (optional)
-              </label>
-              <input
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="e.g. Evening only"
-                className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-slate-900"
-              />
-
+        <div className="mt-6 grid gap-5 lg:grid-cols-4">
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-3">
+            <div className="flex items-center justify-between mb-5">
               <button
-                onClick={onAddSlot}
-                className="mt-5 w-full rounded-lg bg-slate-900 px-4 py-3 text-white font-bold hover:bg-slate-800 transition"
+                onClick={handlePrevMonth}
+                className="rounded-lg border border-slate-200 bg-white p-2 hover:bg-slate-50 transition"
+                aria-label="Previous month"
               >
-                Add Slot
+                <ArrowLeftSIcon className="h-5 w-5 text-slate-900 fill-current" />
               </button>
-            </div>
-          </div>
 
-          {/* Right panel */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:col-span-2">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold text-slate-900">Slots on {selectedDate}</h2>
-              <button
-                onClick={fetchSlots}
-                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-900 hover:bg-slate-100 transition"
-              >
-                Refresh
-              </button>
-            </div>
-
-            {loading ? (
-              <p className="mt-4 text-slate-800 text-sm font-medium">Loading...</p>
-            ) : sortedSlots.length === 0 ? (
-              <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-800 font-medium">
-                No slots for this date yet. Add one on the left.
+              <div className="text-center">
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
+                  {monthLabel(currentDate)}
+                </h2>
+                <p className="text-xs text-slate-600 mt-1">
+                  Green = available, Red = booked
+                </p>
               </div>
-            ) : (
-              <div className="mt-4 space-y-3">
-                {sortedSlots.map((row) => (
-                  <div
-                    key={row.id}
-                    className="rounded-xl border border-slate-200 p-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+
+              <button
+                onClick={handleNextMonth}
+                className="rounded-lg border border-slate-200 bg-white p-2 hover:bg-slate-50 transition"
+                aria-label="Next month"
+              >
+                <ArrowRightSIcon className="h-5 w-5 text-slate-900 fill-current" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-7 gap-2 mb-3">
+              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+                <div
+                  key={day}
+                  className="text-center text-xs sm:text-sm font-semibold text-slate-600"
+                >
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-7 gap-2">
+              {days.map((day, idx) => {
+                if (day === null) return <div key={`empty-${idx}`} />;
+
+                const dateStr = formatDate(
+                  currentDate.getFullYear(),
+                  currentDate.getMonth(),
+                  day
+                );
+                const isBooked = localBookedSet.has(dateStr);
+                const isSelected = selectedDay === dateStr;
+
+                return (
+                  <button
+                    key={dateStr}
+                    onClick={() => handleToggleDate(day)}
+                    className={`aspect-square rounded-lg text-sm sm:text-base font-bold transition border ${
+                      isSelected
+                        ? "ring-2 ring-slate-900"
+                        : ""
+                    } ${
+                      isBooked
+                        ? "bg-red-100 text-red-800 border-red-200 hover:bg-red-200"
+                        : "bg-green-100 text-green-900 border-green-200 hover:bg-green-200"
+                    }`}
                   >
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="rounded-lg bg-slate-100 px-3 py-1 text-xs font-bold text-slate-900">
-                        {row.is_full_day ? "Full Day" : toHHMM(row.slot_time ?? "00:00:00")}
-                      </span>
+                    {day}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
 
-                      <span
-                        className={`rounded-lg px-3 py-1 text-xs font-bold ${
-                          row.status === "available"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-amber-100 text-amber-800"
-                        }`}
-                      >
-                        {row.status.toUpperCase()}
-                      </span>
+          <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-1">
+            <h3 className="text-base font-bold text-slate-900 mb-3">Actions</h3>
 
-                      {row.service_type && (
-                        <span className="rounded-lg bg-blue-100 px-3 py-1 text-xs font-bold text-blue-800">
-                          {typeLabelMap.get(row.service_type) ?? row.service_type.toUpperCase()}
-                        </span>
-                      )}
-                    </div>
+            <div className="space-y-2 text-sm text-slate-700">
+              <p>
+                Default state is <span className="font-semibold text-green-700">available</span>.
+              </p>
+              <p>
+                Only <span className="font-semibold text-red-700">booked</span> dates are saved
+                in database.
+              </p>
+            </div>
 
-                    <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
-                      <button
-                        onClick={() => toggleStatus(row)}
-                        className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-900 hover:bg-slate-100 transition"
-                      >
-                        Toggle status
-                      </button>
-                      <button
-                        onClick={() => deleteSlot(row)}
-                        className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-800 hover:bg-red-100 transition"
-                      >
-                        Delete
-                      </button>
-                    </div>
+            <div className="mt-5 space-y-3">
+              <button
+                onClick={handleSaveChanges}
+                disabled={!isDirty || saving}
+                className={`w-full rounded-lg px-4 py-3 text-sm font-bold transition ${
+                  !isDirty || saving
+                    ? "bg-slate-200 text-slate-500 cursor-not-allowed"
+                    : "bg-slate-900 text-white hover:bg-slate-800"
+                }`}
+              >
+                {saving ? "Saving..." : "Save changes"}
+              </button>
 
-                    {row.note && (
-                      <p className="text-sm text-slate-700 font-medium md:col-span-2">{row.note}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+              <button
+                onClick={handleDiscardMonthChanges}
+                disabled={loading || saving}
+                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-900 hover:bg-slate-100 transition disabled:opacity-60"
+              >
+                Discard month changes
+              </button>
+
+              <button
+                onClick={() => fetchMonth({ forceSyncLocalForMonth: true })}
+                disabled={loading || saving}
+                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-900 hover:bg-slate-100 transition disabled:opacity-60"
+              >
+                {loading ? "Loading..." : "Refresh month"}
+              </button>
+            </div>
+          </aside>
         </div>
       </div>
     </main>
   );
 }
+

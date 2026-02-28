@@ -29,7 +29,6 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 type SiteSettingsRow = {
   brand_name: string | null;
   logo_url: string | null;
-  favicon_url: string | null;
   contact_phone: string | null;
   whatsapp_number: string | null;
   instagram_url: string | null;
@@ -44,7 +43,6 @@ async function getSiteSettings(): Promise<SiteSettingsRow> {
     return {
       brand_name: null,
       logo_url: null,
-      favicon_url: null,
       contact_phone: null,
       whatsapp_number: null,
       instagram_url: null,
@@ -59,7 +57,7 @@ async function getSiteSettings(): Promise<SiteSettingsRow> {
   const { data } = await supabase
     .from("site_settings")
     .select(
-      "brand_name, logo_url, favicon_url, contact_phone, whatsapp_number, instagram_url, facebook_url, tiktok_url, hero_banner_url, updated_at"
+      "brand_name, logo_url, contact_phone, whatsapp_number, instagram_url, facebook_url, tiktok_url, hero_banner_url, updated_at"
     )
     .eq("id", 1)
     .single();
@@ -67,7 +65,6 @@ async function getSiteSettings(): Promise<SiteSettingsRow> {
   return {
     brand_name: data?.brand_name ?? null,
     logo_url: data?.logo_url ?? null,
-    favicon_url: data?.favicon_url ?? null,
     contact_phone: data?.contact_phone ?? null,
     whatsapp_number: data?.whatsapp_number ?? null,
     instagram_url: data?.instagram_url ?? null,
@@ -82,7 +79,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettings();
   const fallbackIcon = "/raygraphy-favicon.svg";
   const version = settings.updated_at ? new Date(settings.updated_at).getTime() : 0;
-  const base = settings.favicon_url ?? settings.logo_url ?? fallbackIcon;
+  const base = settings.logo_url ?? fallbackIcon;
   const iconUrl = `${base}${base.includes("?") ? "&" : "?"}v=${version}`;
   const socialImage = absoluteUrl(settings.hero_banner_url ?? settings.logo_url ?? "/raygraphy-og.svg");
   const googleSiteVerification =
@@ -177,7 +174,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const settings = await getSiteSettings();
-  const base = settings.favicon_url ?? settings.logo_url ?? "/raygraphy-favicon.svg";
+  const base = settings.logo_url ?? "/raygraphy-favicon.svg";
   const version = settings.updated_at ? new Date(settings.updated_at).getTime() : 0;
   const faviconHref = `${base}${base.includes("?") ? "&" : "?"}v=${version}`;
   const brandName = settings.brand_name ?? SITE_NAME;

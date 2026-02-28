@@ -7,25 +7,14 @@ import { supabase } from "@/lib/supabaseClient";
 import type { SiteSettings } from "@/lib/getSettings";
 import type { SelectedPackage } from "@/lib/bookingTypes";
 
-type SlotStatus = "available" | "booked";
-type ServiceTypeSlug = string;
-type AvailabilitySlot = { time: string; status: SlotStatus };
-
-type AvailabilityRow = {
-  id: string;
+type BookedDayRow = {
   date: string; // YYYY-MM-DD
-  slot_time: string | null; // HH:MM:SS or null
-  is_full_day: boolean;
-  service_type: ServiceTypeSlug | null;
-  status: SlotStatus;
-  note: string | null;
-  created_at: string;
 };
 
 interface CalendarSectionProps {
-  onDateSelect: (date: string, time: string) => void; // keep as-is, we pass "Any Time"
+  onDateSelect: (date: string, time: string) => void;
   selectedDate?: string;
-  selectedTime?: string; // not used anymore, but keep to avoid breaking parent
+  selectedTime?: string;
   selectedPackage?: SelectedPackage | null;
   selectedTypeLabel?: string | null;
   settings: SiteSettings | null;
@@ -33,9 +22,8 @@ interface CalendarSectionProps {
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
-const formatDate = (year: number, month: number, day: number): string => {
-  return `${year}-${pad2(month + 1)}-${pad2(day)}`;
-};
+const formatDate = (year: number, month: number, day: number): string =>
+  `${year}-${pad2(month + 1)}-${pad2(day)}`;
 
 const monthLabel = (date: Date) =>
   date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
@@ -46,7 +34,19 @@ const getDaysInMonth = (date: Date) =>
 const getFirstDayOfMonth = (date: Date) =>
   new Date(date.getFullYear(), date.getMonth(), 1).getDay();
 
-const toHHMM = (t: string) => t.slice(0, 5);
+const monthKeyFromDate = (date: Date): string =>
+  `${date.getFullYear()}-${pad2(date.getMonth() + 1)}`;
+
+const monthKeyFromIso = (iso: string) => iso.slice(0, 7);
+
+const replaceMonthDates = (
+  prev: string[],
+  key: string,
+  incoming: string[]
+): string[] => {
+  const kept = prev.filter((d) => monthKeyFromIso(d) !== key);
+  return Array.from(new Set([...kept, ...incoming])).sort();
+};
 
 export default function CalendarSection({
   onDateSelect,
@@ -55,15 +55,16 @@ export default function CalendarSection({
   selectedTypeLabel,
   settings,
 }: CalendarSectionProps) {
-  const [currentDate, setCurrentDate] = useState(new Date()); // current month
+  const [currentDate, setCurrentDate] = useState(
+    () => new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+  );
   const [selectedDay, setSelectedDay] = useState<string | null>(selectedDate || null);
 
-  const [rows, setRows] = useState<AvailabilityRow[]>([]);
+  const [bookedDates, setBookedDates] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [bookingError, setBookingError] = useState<string | null>(null);
 
-  // keep UI synced if parent changes selectedDate
   useEffect(() => {
     if (selectedDate) setSelectedDay(selectedDate);
   }, [selectedDate]);
@@ -72,23 +73,6 @@ export default function CalendarSection({
     setBookingError(null);
   }, [selectedPackage, selectedDate]);
 
-  const handlePrevMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
-  };
-
-  const handleNextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
-  };
-
-  const handleSelectDay = (day: number) => {
-    const dateStr = formatDate(currentDate.getFullYear(), currentDate.getMonth(), day);
-    setSelectedDay(dateStr);
-
-    // DATE ONLY: always proceed with "Any Time"
-    onDateSelect(dateStr, "Any Time");
-  };
-
-  // Fetch availability for current month from Supabase
   useEffect(() => {
     fetchMonth();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -104,82 +88,56 @@ export default function CalendarSection({
       currentDate.getMonth(),
       getDaysInMonth(currentDate)
     );
+    const monthKey = monthKeyFromDate(currentDate);
 
     const { data, error } = await supabase
-      .from("availability_slots")
-      .select("*")
+      .from("booked_days")
+      .select("date")
       .gte("date", from)
       .lte("date", to)
-      .order("date", { ascending: true })
-      .order("is_full_day", { ascending: false })
-      .order("slot_time", { ascending: true });
+      .order("date", { ascending: true });
 
     if (error) {
       setErr(error.message);
-      setRows([]);
       setLoading(false);
       return;
     }
 
-    setRows((data as AvailabilityRow[]) ?? []);
+    const monthDates = ((data as BookedDayRow[]) ?? []).map((row) => row.date);
+    setBookedDates((prev) => replaceMonthDates(prev, monthKey, monthDates));
     setLoading(false);
   };
 
-  // Group rows by date
-  const byDate = useMemo(() => {
-    const map = new Map<string, AvailabilityRow[]>();
-    for (const r of rows) {
-      const list = map.get(r.date) ?? [];
-      list.push(r);
-      map.set(r.date, list);
-    }
-    return map;
-  }, [rows]);
+  const bookedDateSet = useMemo(() => new Set(bookedDates), [bookedDates]);
 
-  // Full-day booked => date becomes RED, but still clickable
-  const isFullDayBooked = (dateStr: string) => {
-    const list = byDate.get(dateStr) ?? [];
-    return list.some((x) => x.is_full_day && x.status === "booked");
+  const handlePrevMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
   };
 
-  // For selected date: show ONLY slots that admin created (view-only)
-  const getAvailabilityForDate = (dateStr: string): { slots: AvailabilitySlot[]; eventType: ServiceTypeSlug | null } => {
-    const list = byDate.get(dateStr) ?? [];
-
-    const slots: AvailabilitySlot[] = list
-      .slice()
-      .sort((a, b) => {
-        if (a.is_full_day !== b.is_full_day) return a.is_full_day ? -1 : 1;
-        const ta = a.slot_time ?? "";
-        const tb = b.slot_time ?? "";
-        return ta.localeCompare(tb);
-      })
-      .map((x) => ({
-        time: x.is_full_day ? "Full Day" : toHHMM(x.slot_time ?? "00:00:00"),
-        status: x.status,
-      }));
-
-    const eventType = list.find((x) => x.service_type)?.service_type ?? null;
-
-    return { slots, eventType };
+  const handleNextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
   };
 
-  const availability = selectedDay ? getAvailabilityForDate(selectedDay) : null;
-  const selectedDayIsFullBooked = selectedDay ? isFullDayBooked(selectedDay) : false;
-  const effectiveDate = selectedDay ?? selectedDate ?? null;
-  const brandName = settings?.brand_name || "Raygraphy";
-  const whatsappDigits = (settings?.whatsapp_number ?? "").replace(/\D/g, "");
-  const contactDigits = (settings?.contact_phone ?? "").replace(/\D/g, "");
-  const phoneDigits = whatsappDigits || contactDigits;
+  const handleSelectDay = (day: number) => {
+    const dateStr = formatDate(currentDate.getFullYear(), currentDate.getMonth(), day);
+    setSelectedDay(dateStr);
+    onDateSelect(dateStr, "Any Time");
+  };
 
   const days: Array<number | null> = [];
   const daysInMonth = getDaysInMonth(currentDate);
   const firstDay = getFirstDayOfMonth(currentDate);
-
-  for (let i = 0; i < firstDay; i++) days.push(null);
-  for (let i = 1; i <= daysInMonth; i++) days.push(i);
+  for (let i = 0; i < firstDay; i += 1) days.push(null);
+  for (let i = 1; i <= daysInMonth; i += 1) days.push(i);
 
   const monthName = monthLabel(currentDate);
+  const effectiveDate = selectedDay ?? selectedDate ?? null;
+  const selectedIsBooked = effectiveDate ? bookedDateSet.has(effectiveDate) : false;
+
+  const brandName = settings?.brand_name || "Raygraphy";
+  const whatsappDigits = (settings?.whatsapp_number ?? "").replace(/\D/g, "");
+  const contactDigits = (settings?.contact_phone ?? "").replace(/\D/g, "");
+  const phoneDigits = whatsappDigits || contactDigits;
 
   const formatNiceDate = (iso: string) => {
     const safeDate = new Date(`${iso}T00:00:00`);
@@ -198,7 +156,7 @@ export default function CalendarSection({
       "",
       "I'd like to book a session with these details:",
       `Category: ${selectedTypeLabel || "Photography"}`,
-      `Package: ${selectedPackage.name}`,      
+      `Package: ${selectedPackage.name}`,
       `Date: ${formatNiceDate(effectiveDate)}`,
       "Time: ",
       "Pax: ",
@@ -211,6 +169,10 @@ export default function CalendarSection({
 
   const handleBookNow = () => {
     if (!selectedPackage || !effectiveDate) return;
+    if (selectedIsBooked) {
+      setBookingError("Selected date is fully booked. Please choose another date.");
+      return;
+    }
     if (!phoneDigits) {
       setBookingError("WhatsApp number is not configured. Please use the inquiry section below.");
       const inquiryEl = document.getElementById("inquiry");
@@ -222,7 +184,7 @@ export default function CalendarSection({
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
-  const canBook = Boolean(selectedPackage && effectiveDate);
+  const canBook = Boolean(selectedPackage && effectiveDate && !selectedIsBooked);
 
   return (
     <section
@@ -233,9 +195,9 @@ export default function CalendarSection({
         <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4 text-center">
           Check Availability
         </h2>
-        
+
         <p className="text-slate-700 text-center mb-12 max-w-2xl mx-auto font-medium">
-          Select a date to check availability and confirm your booking details.
+          Select a date to check full-day availability and confirm your booking details.
         </p>
 
         {err && (
@@ -245,9 +207,7 @@ export default function CalendarSection({
         )}
 
         <div className="grid lg:grid-cols-3 gap-6 sm:gap-8">
-          {/* Calendar Grid */}
           <div className="lg:col-span-2 bg-white rounded-lg shadow-md p-4 sm:p-6">
-            {/* Month Navigation */}
             <div className="flex items-center justify-between mb-5 sm:mb-6">
               <button
                 onClick={handlePrevMonth}
@@ -278,7 +238,6 @@ export default function CalendarSection({
               </button>
             </div>
 
-            {/* Weekday Headers */}
             <div className="grid grid-cols-7 gap-1.5 sm:gap-2 mb-3 sm:mb-4">
               {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
                 <div
@@ -290,29 +249,27 @@ export default function CalendarSection({
               ))}
             </div>
 
-            {/* Days Grid */}
             <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
               {days.map((day, idx) => {
                 if (day === null) return <div key={`empty-${idx}`} />;
 
                 const dateStr = formatDate(currentDate.getFullYear(), currentDate.getMonth(), day);
-                const fullBooked = isFullDayBooked(dateStr);
+                const isBooked = bookedDateSet.has(dateStr);
                 const isSelected = selectedDay === dateStr;
 
                 return (
                   <button
                     key={dateStr}
                     onClick={() => handleSelectDay(day)}
-                    className={`
-                      aspect-square rounded-lg font-semibold transition text-xs sm:text-sm
-                      ${
-                        isSelected
-                          ? "bg-slate-900 text-white ring-2 ring-slate-900"
-                          : fullBooked
-                          ? "bg-red-100 text-red-800 hover:bg-red-200"
-                          : "bg-green-100 text-green-900 hover:bg-green-200"
-                      }
-                    `}
+                    className={`aspect-square rounded-lg font-semibold transition text-xs sm:text-sm ${
+                      isSelected
+                        ? "ring-2 ring-slate-900"
+                        : ""
+                    } ${
+                      isBooked
+                        ? "bg-red-100 text-red-800 hover:bg-red-200"
+                        : "bg-green-100 text-green-900 hover:bg-green-200"
+                    }`}
                   >
                     {day}
                   </button>
@@ -321,51 +278,25 @@ export default function CalendarSection({
             </div>
           </div>
 
-          {/* Slots Display (view-only) */}
           <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
             <h3 className="text-base sm:text-lg font-semibold text-slate-900 mb-3 sm:mb-4">
               {selectedDay ? "Availability Details" : "Select a Date"}
             </h3>
 
-            {selectedDay && availability ? (
-              availability.slots.length > 0 ? (
-                <div className="space-y-2">
-                  {availability.slots.map((slot: AvailabilitySlot, idx: number) => {
-                    const effectiveBooked = selectedDayIsFullBooked || slot.status === "booked";
-
-                    return (
-                      <div
-                        key={idx}
-                        className={`
-                          w-full py-3 px-4 rounded-lg font-medium text-sm border
-                          ${
-                            !effectiveBooked
-                              ? "bg-green-50 text-green-900 border-green-200"
-                              : "bg-red-50 text-red-600 border-red-200"
-                          }
-                        `}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span>{slot.time}</span>
-                          <span className="text-xs font-semibold">
-                            {!effectiveBooked ? "Available" : "Booked"}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-slate-500 text-sm">
-                  No slots for this date yet. You can still proceed with booking using the selected date.</p>
-              )
+            {selectedDay ? (
+              <div
+                className={`rounded-lg border px-4 py-3 text-sm font-semibold ${
+                  selectedIsBooked
+                    ? "bg-red-50 text-red-700 border-red-200"
+                    : "bg-green-50 text-green-800 border-green-200"
+                }`}
+              >
+                {selectedIsBooked ? "Booked (Full Day)" : "Available"}
+              </div>
             ) : (
-              <p className="text-slate-500 text-sm">
-                Green = available. Red = fully booked.
-              </p>
+              <p className="text-slate-500 text-sm">Green = available. Red = booked.</p>
             )}
 
-            {/* Booking Summary */}
             <div className="mt-6 border-t border-slate-200 pt-6">
               <h4 className="text-base sm:text-lg font-semibold text-slate-900 mb-3">
                 Booking Summary
@@ -434,5 +365,4 @@ export default function CalendarSection({
     </section>
   );
 }
-
 

@@ -173,8 +173,19 @@ export default function AdminSettingsPage() {
       return;
     }
 
+        if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("raygraphy:logo-updated", {
+          detail: {
+            logoUrl: payload.logo_url,
+            updatedAt: payload.updated_at,
+          },
+        })
+      );
+    }
+
     setLogoVersion(payload.updated_at);
-    setMessage("Saved successfully ✅");
+    setMessage("Saved successfully.");
     setSaving(false);
   };
 
@@ -463,3 +474,4 @@ function Field(props: {
     </div>
   );
 }
+
