@@ -6,6 +6,7 @@ import ArrowLeftSIcon from "@remixicons/react/line/ArrowLeftSIcon";
 import ArrowRightSIcon from "@remixicons/react/line/ArrowRightSIcon";
 import CloseIcon from "@remixicons/react/line/CloseIcon";
 import type { GalleryImage } from "@/lib/gallery";
+import { toLabelFromSlug } from "@/lib/seo";
 
 type LightboxModalProps = {
   items: GalleryImage[];
@@ -23,6 +24,8 @@ export default function LightboxModal({
   onNext,
 }: LightboxModalProps) {
   const active = index !== null ? items[index] : null;
+  const categoryLabel = active?.category ? toLabelFromSlug(active.category) : "Photography";
+  const imagePosition = index !== null ? index + 1 : 0;
 
   useEffect(() => {
     if (index === null) return;
@@ -73,7 +76,7 @@ export default function LightboxModal({
       >
         <Image
           src={active.url}
-          alt=""
+          alt={`Raygraphy ${categoryLabel} photography in Kuala Lumpur and Selangor - image ${imagePosition}`}
           fill
           className="object-contain"
           sizes="100vw"

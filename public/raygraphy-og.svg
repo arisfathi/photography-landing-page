@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">Raygraphy Open Graph Image</title>
+  <desc id="desc">Raygraphy portrait, convocation, and event photography in Kuala Lumpur and Selangor.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#020617"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="980" cy="90" r="210" fill="#ffffff" opacity="0.08"/>
+  <circle cx="1090" cy="540" r="240" fill="#ffffff" opacity="0.06"/>
+
+  <g transform="translate(90 130)">
+    <rect width="96" height="96" rx="22" fill="#ffffff" opacity="0.16"/>
+    <circle cx="48" cy="48" r="29" fill="#ffffff" opacity="0.95"/>
+    <circle cx="48" cy="48" r="14" fill="#1d4ed8"/>
+  </g>
+
+  <text x="90" y="315" fill="#ffffff" font-family="Arial, sans-serif" font-size="74" font-weight="700">
+    Raygraphy
+  </text>
+  <text x="90" y="380" fill="#cbd5e1" font-family="Arial, sans-serif" font-size="34">
+    Portrait, Convocation &amp; Event Photography
+  </text>
+  <text x="90" y="430" fill="#cbd5e1" font-family="Arial, sans-serif" font-size="30">
+    Kuala Lumpur &amp; Selangor
+  </text>
+</svg>
+

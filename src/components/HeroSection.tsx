@@ -22,7 +22,7 @@ export default function HeroSection({ settings }: HeroSectionProps) {
       <section className="relative w-full h-64 sm:h-80 md:h-96 overflow-hidden">
         <Image
           src={heroBannerUrl}
-          alt="Hero banner"
+          alt="Raygraphy portrait, convocation, and event photography in Kuala Lumpur and Selangor"
           fill
           className="object-cover"
           priority

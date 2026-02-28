@@ -109,7 +109,10 @@ export default function PortfolioSection({
       rows.map((r) => ({
         id: r.id,
         src: r.image_url,
-        alt: r.alt || r.title || "Portfolio photo",
+        alt:
+          r.alt ||
+          r.title ||
+          `${getTypeLabel(selectedCategory)} photography by Raygraphy in Kuala Lumpur and Selangor`,
         title: r.title || "",
       }))
     );

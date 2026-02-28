@@ -1,99 +1,47 @@
-"use client";
+import type { Metadata } from "next";
+import HomePageClient from "@/components/HomePageClient";
+import {
+  DEFAULT_SEO_DESCRIPTION,
+  DEFAULT_SEO_TITLE,
+  SERVICE_SEO,
+  SITE_URL,
+  buildPageMetadata,
+  toJsonLd,
+} from "@/lib/seo";
 
-import { useEffect, useState } from "react";
-import type { PackageCategory } from "@/lib/types"; // slug string
-import Header from "@/components/Header";
-import HeroSection from "@/components/HeroSection";
-import CalendarSection from "@/components/CalendarSection";
-import PortfolioSection from "@/components/PortfolioSection";
-import PackagesSection from "@/components/PackagesSection";
-import InquirySection from "@/components/InquirySection";
-import type { SiteSettings } from "@/lib/getSettings";
-import { getSiteSettings } from "@/lib/getSettings";
-import type { SelectedPackage } from "@/lib/bookingTypes";
+export const metadata: Metadata = buildPageMetadata({
+  title: DEFAULT_SEO_TITLE,
+  description: DEFAULT_SEO_DESCRIPTION,
+  path: "/",
+  keywords: [
+    "photographer Kuala Lumpur",
+    "photographer Selangor",
+    "whatsapp photography booking",
+    "fotografi profesional Malaysia",
+  ],
+});
 
-export default function Home() {
-  const [selectedDate, setSelectedDate] = useState<string | undefined>();
-  const [selectedTime, setSelectedTime] = useState<string | undefined>();
-  const [selectedCategory, setSelectedCategory] =
-    useState<PackageCategory | null>(null);
-  const [selectedPackage, setSelectedPackage] = useState<SelectedPackage | null>(null);
-  const [selectedTypeLabel, setSelectedTypeLabel] = useState<string | null>(null);
-
-  const [settings, setSettings] = useState<SiteSettings | null>(null);
-
-  useEffect(() => {
-    (async () => {
-      const fetched = await getSiteSettings();
-      setSettings(fetched);
-    })();
-  }, []);
-
-  useEffect(() => {
-    const scrollToHash = () => {
-      if (typeof window === "undefined") return;
-      const hash = window.location.hash;
-      if (!hash) return;
-      const id = hash.replace("#", "");
-      const el = document.getElementById(id);
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    };
-
-    // Run on initial load and on hash changes
-    scrollToHash();
-    window.addEventListener("hashchange", scrollToHash);
-    return () => window.removeEventListener("hashchange", scrollToHash);
-  }, []);
-
-  useEffect(() => {
-    setSelectedPackage(null);
-    setSelectedTypeLabel(null);
-  }, [selectedCategory]);
-
-  const handleDateSelect = (date: string, time: string) => {
-    setSelectedDate(date);
-    setSelectedTime(time);
+export default function HomePage() {
+  const servicesListSchema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "Raygraphy Photography Services",
+    itemListElement: Object.values(SERVICE_SEO).map((service, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: `${service.nameEn} / ${service.nameMs}`,
+      url: `${SITE_URL}/services/${service.slug}`,
+    })),
   };
 
   return (
-    <main className="min-h-screen bg-white">
-      <Header settings={settings} />
-
-      <HeroSection settings={settings} />
-
-      <PortfolioSection
-        selectedCategory={selectedCategory}
-        onCategoryChange={setSelectedCategory}
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: toJsonLd(servicesListSchema) }}
       />
-
-      <PackagesSection
-        selectedCategory={selectedCategory}
-        settings={settings}
-        onSelectPackage={({ categoryLabel, pkg }) => {
-          setSelectedTypeLabel(categoryLabel);
-          setSelectedPackage(pkg);
-        }}
-      />
-
-      <CalendarSection
-        onDateSelect={handleDateSelect}
-        selectedDate={selectedDate}
-        selectedTime={selectedTime}
-        selectedPackage={selectedPackage}
-        selectedTypeLabel={selectedTypeLabel}
-        settings={settings}
-      />
-      
-      <InquirySection settings={settings} />
-
-      <footer className="bg-slate-900 text-slate-300 py-8 px-4">
-        <div className="max-w-6xl mx-auto text-center text-sm">
-          <p>&copy; 2026 raygraphy. All rights reserved.</p>
-          <p className="mt-2">Professional Photography Services</p>
-        </div>
-      </footer>
-    </main>
+      <HomePageClient />
+    </>
   );
 }
+

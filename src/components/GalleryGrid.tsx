@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import type { GalleryImage } from "@/lib/gallery";
+import { toLabelFromSlug } from "@/lib/seo";
 
 type GalleryGridProps = {
   items: GalleryImage[];
@@ -27,23 +28,28 @@ export default function GalleryGrid({ items, loading = false, onSelect }: Galler
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-      {items.map((img, index) => (
-        <button
-          key={img.id}
-          type="button"
-          onClick={() => onSelect?.(index)}
-          className="relative aspect-[4/5] w-full overflow-hidden rounded-xl bg-slate-100"
-          aria-label="Open image"
-        >
-          <Image
-            src={img.url}
-            alt=""
-            fill
-            className="object-cover transition-transform duration-300 hover:scale-105"
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 16vw"
-          />
-        </button>
-      ))}
+      {items.map((img, index) => {
+        const categoryLabel = img.category ? toLabelFromSlug(img.category) : "Photography";
+        const imageAlt = `Raygraphy ${categoryLabel} photography in Kuala Lumpur and Selangor - image ${index + 1}`;
+
+        return (
+          <button
+            key={img.id}
+            type="button"
+            onClick={() => onSelect?.(index)}
+            className="relative aspect-[4/5] w-full overflow-hidden rounded-xl bg-slate-100"
+            aria-label={`Open ${categoryLabel} image ${index + 1}`}
+          >
+            <Image
+              src={img.url}
+              alt={imageAlt}
+              fill
+              className="object-cover transition-transform duration-300 hover:scale-105"
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 16vw"
+            />
+          </button>
+        );
+      })}
     </div>
   );
 }

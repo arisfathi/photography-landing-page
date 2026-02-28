@@ -15,11 +15,22 @@ import GalleryUploadIcon from "@remixicons/react/line/GalleryUploadIcon";
 
 type UploadItem = File;
 
+const toSeoFileSlug = (value: string) =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-_]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+
 const buildPath = (category: string | null, file: File) => {
   const ext = file.name.split(".").pop() || "jpg";
-  const safeCategory = category || "general";
+  const fileBase = file.name.replace(/\.[^.]+$/, "");
+  const seoFileName = toSeoFileSlug(fileBase) || "image";
+  const safeCategory = toSeoFileSlug(category || "general") || "general";
   const rand = Math.random().toString(36).slice(2, 8);
-  return `gallery/${safeCategory}/${Date.now()}_${rand}.${ext}`;
+  return `gallery/${safeCategory}/${Date.now()}_${seoFileName}_${rand}.${ext}`;
 };
 
 export default function AdminGalleryPage() {

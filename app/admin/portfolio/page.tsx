@@ -28,6 +28,16 @@ function safeFileName(name: string) {
   return name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
 }
 
+function toSeoFileSlug(text: string) {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-_]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
 export default function AdminPortfolioPage() {
   const router = useRouter();
 
@@ -176,7 +186,10 @@ export default function AdminPortfolioPage() {
 
     setUploading(true);
 
-    const path = `${category}/${Date.now()}-${safeFileName(file.name)}`;
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const baseName = title.trim() || file.name.replace(/\.[^.]+$/, "");
+    const seoName = toSeoFileSlug(baseName) || "photo";
+    const path = `${category}/${Date.now()}-${safeFileName(seoName)}.${ext}`;
 
     // 1) Upload to storage
     const { error: uploadError } = await supabase.storage

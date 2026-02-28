@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">Raygraphy Logo</title>
+  <desc id="desc">Stylized camera aperture logo for Raygraphy.</desc>
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="56" fill="url(#g)"/>
+  <g fill="#ffffff" transform="translate(128 128)">
+    <circle r="54" opacity="0.2"/>
+    <path d="M0-78 34-18 0-24-34-18Z"/>
+    <path d="M67-39 39 34 22 0 0-24Z"/>
+    <path d="M39 67-34 39 0 22 24 0Z"/>
+    <path d="M-39 67-67-39-24 0 0 24Z"/>
+    <path d="M-67-39 39-67 0-24-22 0Z"/>
+    <circle r="26"/>
+    <circle r="16" fill="#1d4ed8"/>
+  </g>
+</svg>
+
