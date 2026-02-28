@@ -35,10 +35,7 @@ https://raygraphy.co/robots.txt
 ## 4) Post-deploy checks
 1. Confirm admin URLs are excluded by `robots.txt`.
 2. Validate structured data in Rich Results Test:
-   - Home page (LocalBusiness/WebSite)
-   - `/services/{slug}` pages (BreadcrumbList/Service)
+   - Home page (LocalBusiness/Organization/WebSite)
 3. Run PageSpeed Insights for:
    - `/`
    - `/gallery`
-   - `/services/portrait`
-

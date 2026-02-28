@@ -24,7 +24,6 @@ export default function Header({ settings }: HeaderProps) {
   const tiktok = settings?.tiktok_url || "";
   const logoUrl = settings?.logo_url || "/logo.svg";
   const isGallery = pathname === "/gallery";
-  const isServices = pathname.startsWith("/services");
 
   return (
     <header className="sticky top-0 z-50 bg-white shadow-sm">
@@ -43,14 +42,6 @@ export default function Header({ settings }: HeaderProps) {
         </div>
 
         <nav className="hidden md:flex items-center gap-8 text-slate-600 text-sm font-medium">
-          <Link
-            href="/services"
-            className={`hover:text-slate-900 transition ${
-              isServices ? "text-slate-900 font-semibold" : ""
-            }`}
-          >
-            Services
-          </Link>
           <Link href="/#portfolio" className="hover:text-slate-900 transition">
             Portfolio
           </Link>
@@ -125,14 +116,6 @@ export default function Header({ settings }: HeaderProps) {
       </div>
 
       <div className="md:hidden bg-slate-50 border-t border-slate-200 px-3 sm:px-4 py-3 flex flex-wrap justify-center gap-3 text-xs sm:text-sm font-medium">
-        <Link
-          href="/services"
-          className={`text-slate-600 hover:text-slate-900 whitespace-nowrap ${
-            isServices ? "text-slate-900 font-semibold" : ""
-          }`}
-        >
-          Services
-        </Link>
         <Link href="/#calendar" className="text-slate-600 hover:text-slate-900 whitespace-nowrap">
           Calendar
         </Link>

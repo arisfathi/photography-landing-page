@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { PackageCategory } from "@/lib/types";
 import Header from "@/components/Header";
@@ -13,11 +12,20 @@ import type { SiteSettings } from "@/lib/getSettings";
 import { getSiteSettings } from "@/lib/getSettings";
 import type { SelectedPackage } from "@/lib/bookingTypes";
 
+const HOME_SERVICE_HASHES = new Set(["portrait", "convocation", "event"]);
+
+function getCategoryFromHash(): PackageCategory | null {
+  if (typeof window === "undefined") return null;
+  const hash = window.location.hash.replace("#", "").toLowerCase();
+  if (!hash || !HOME_SERVICE_HASHES.has(hash)) return null;
+  return hash as PackageCategory;
+}
+
 export default function HomePageClient() {
   const [selectedDate, setSelectedDate] = useState<string | undefined>();
   const [selectedTime, setSelectedTime] = useState<string | undefined>();
   const [selectedCategory, setSelectedCategory] =
-    useState<PackageCategory | null>(null);
+    useState<PackageCategory | null>(() => getCategoryFromHash());
   const [selectedPackage, setSelectedPackage] = useState<SelectedPackage | null>(null);
   const [selectedTypeLabel, setSelectedTypeLabel] = useState<string | null>(null);
 
@@ -47,10 +55,34 @@ export default function HomePageClient() {
     return () => window.removeEventListener("hashchange", scrollToHash);
   }, []);
 
+  useEffect(() => {
+    const syncCategoryFromHash = () => {
+      const hashCategory = getCategoryFromHash();
+      if (!hashCategory) return;
+      setSelectedCategory(hashCategory);
+      setSelectedPackage(null);
+      setSelectedTypeLabel(null);
+    };
+
+    window.addEventListener("hashchange", syncCategoryFromHash);
+    return () => window.removeEventListener("hashchange", syncCategoryFromHash);
+  }, []);
+
   const handleCategoryChange = (category: PackageCategory | null) => {
     setSelectedCategory(category);
     setSelectedPackage(null);
     setSelectedTypeLabel(null);
+
+    if (!category || typeof window === "undefined") return;
+
+    const targetElement =
+      document.getElementById(category) || document.getElementById("packages");
+
+    if (targetElement) {
+      targetElement.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    window.history.replaceState(null, "", `/#${category}`);
   };
 
   const handleDateSelect = (date: string, time: string) => {
@@ -68,6 +100,10 @@ export default function HomePageClient() {
         selectedCategory={selectedCategory}
         onCategoryChange={handleCategoryChange}
       />
+
+      <div id="portrait" className="scroll-mt-24" aria-hidden="true" />
+      <div id="convocation" className="scroll-mt-24" aria-hidden="true" />
+      <div id="event" className="scroll-mt-24" aria-hidden="true" />
 
       <PackagesSection
         selectedCategory={selectedCategory}
@@ -93,18 +129,6 @@ export default function HomePageClient() {
         <div className="max-w-6xl mx-auto text-center text-sm">
           <p>&copy; 2026 Raygraphy. All rights reserved.</p>
           <p className="mt-2">Professional Photography Services in KL & Selangor</p>
-
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-xs sm:text-sm">
-            <Link className="hover:text-white transition" href="/services/portrait">
-              Portrait Photography
-            </Link>
-            <Link className="hover:text-white transition" href="/services/convocation">
-              Convocation Photography
-            </Link>
-            <Link className="hover:text-white transition" href="/services/event">
-              Event Photography
-            </Link>
-          </div>
         </div>
       </footer>
     </main>
