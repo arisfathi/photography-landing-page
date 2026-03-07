@@ -213,19 +213,8 @@ Notes:
 - `app/services/[slug]/` exists but is currently empty (reserved for future service pages).
 - `src/data/` currently has no committed files.
 
-# 11. Example Screenshots or Demo
 
-No screenshot/demo assets are currently committed in this repository.
-
-Suggested additions:
-
-- Homepage screenshot
-- Gallery page screenshot
-- Admin dashboard screenshot
-
-You can place them under `docs/screenshots/` and reference them here.
-
-# 12. Contribution Guidelines
+# 11. Contribution Guidelines
 
 1. Fork the repository and create a feature branch.
 2. Keep changes focused and scoped to one feature/fix.
@@ -236,7 +225,7 @@ You can place them under `docs/screenshots/` and reference them here.
 4. If you change Supabase schema or storage rules, document it in the PR.
 5. Update README/docs for any behavior or setup changes.
 
-# 13. License
+# 12. License
 
 No `LICENSE` file is currently present in this repository.
 
